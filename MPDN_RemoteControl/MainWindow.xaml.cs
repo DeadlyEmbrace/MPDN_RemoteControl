@@ -33,6 +33,7 @@ namespace MPDN_RemoteControl
         private TimeSpan Duration;
         private bool movingSlider = false;
         private string currentFile;
+        private bool isFullscreen = false;
         #endregion
 
         #region Constuctor
@@ -71,6 +72,7 @@ namespace MPDN_RemoteControl
                     btnBrowse.IsEnabled = isEnabled;
                     btnPlayPause.IsEnabled = isEnabled;
                     btnStop.IsEnabled = isEnabled;
+                    btnFullscreen.IsEnabled = isEnabled;
                 });
         }
 
@@ -178,6 +180,7 @@ namespace MPDN_RemoteControl
                             btnPlayPause.IsEnabled = true;
                             sldrSpan.IsEnabled = true;
                             btnStop.IsEnabled = true;
+                            btnFullscreen.IsEnabled = true;
                         });
                         PassCommandToServer("GetDuration|" + myGuid.ToString());
                         break;
@@ -246,6 +249,22 @@ namespace MPDN_RemoteControl
                         long.TryParse(cmd[1], out fullDur);
                         Duration = TimeSpan.FromMilliseconds(fullDur / 1000);
                         Dispatcher.Invoke(() => sldrSpan.Maximum = Duration.TotalSeconds);
+                        break;
+                    case "Fullscreen":
+                        Dispatcher.Invoke(() =>
+                            {
+                                bool fs = false;
+                                Boolean.TryParse(command[1].ToString(), out fs);
+                                isFullscreen = fs;
+                                if(isFullscreen)
+                                {
+                                    btnFullscreen.Content = "Exit Fullscreen";
+                                }
+                                else
+                                {
+                                    btnFullscreen.Content = "Go Fullscreen";
+                                }
+                            });
                         break;
                 }
             }
@@ -368,6 +387,14 @@ namespace MPDN_RemoteControl
             SetConnectButtonState(true);
             SetPlaybackButtonState(false);
             lblStatus.Content = "Status: Not Connected";
+        }
+
+        private void btnFullscreen_Click(object sender, RoutedEventArgs e)
+        {
+            if(!isFullscreen)
+                PassCommandToServer("FullScreen|True");
+            else
+                PassCommandToServer("FullScreen|False");
         }
     }
 }
