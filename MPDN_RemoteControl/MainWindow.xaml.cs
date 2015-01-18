@@ -28,12 +28,14 @@ namespace MPDN_RemoteControl
         private Socket server;
         private StreamWriter writer;
         private Guid myGuid;
+        private Guid ClientAuthGuid;
         private string playState = "None";
         private Timer DurationTimer;
         private TimeSpan Duration;
         private bool movingSlider = false;
         private string currentFile;
         private bool isFullscreen = false;
+        private ClientGUID guidManager = new ClientGUID();
         #endregion
 
         #region Constuctor
@@ -43,6 +45,7 @@ namespace MPDN_RemoteControl
             DurationTimer = new Timer(100);
             DurationTimer.Elapsed += DurationTimer_Elapsed;
             DurationTimer.Start();
+            ClientAuthGuid = guidManager.GetGuid;
         }
         #endregion
 
@@ -122,6 +125,11 @@ namespace MPDN_RemoteControl
                 NetworkStream nStream = new NetworkStream(server);
                 StreamReader reader = new StreamReader(nStream);
                 writer = new StreamWriter(nStream);
+
+                Dispatcher.Invoke(() => lblState.Content = "Auth Code:" + ClientAuthGuid.ToString());
+                PassCommandToServer(ClientAuthGuid.ToString());
+
+
                 Dispatcher.Invoke(() =>
                 {
                     btnBrowse.IsEnabled = true;
@@ -162,6 +170,9 @@ namespace MPDN_RemoteControl
             {
                 switch (cmd[0])
                 {
+                    case "Exit":
+                        ForcedDisconnect();
+                        break;
                     case "ClientGUID":
                         if (Guid.TryParse(cmd[1], out myGuid))
                         {
@@ -333,6 +344,17 @@ namespace MPDN_RemoteControl
                 writer.WriteLine(cmd);
                 writer.Flush();
             }
+        }
+
+        private void ForcedDisconnect()
+        {
+            SetConnectButtonState(true);
+            SetPlaybackButtonState(false);
+            Dispatcher.Invoke(() => lblStatus.Content = "Status: Not Connected - Not Authorized");
+            writer.Close();
+            writer = null;
+            server.Close();
+            server = null;
         }
 
         private void btnPlayPause_Click(object sender, RoutedEventArgs e)
