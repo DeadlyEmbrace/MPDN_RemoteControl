@@ -339,11 +339,16 @@ namespace MPDN_RemoteControl
         /// <param name="cmd"></param>
         private void PassCommandToServer(string cmd)
         {
-            if (writer != null)
+            try
             {
-                writer.WriteLine(cmd);
-                writer.Flush();
+                if (writer != null)
+                {
+                    writer.WriteLine(cmd);
+                    writer.Flush();
+                }
             }
+            catch(Exception)
+            { }
         }
 
         private void ForcedDisconnect()
