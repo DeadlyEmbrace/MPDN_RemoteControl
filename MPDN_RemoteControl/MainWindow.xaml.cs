@@ -265,7 +265,7 @@ namespace MPDN_RemoteControl
                         Dispatcher.Invoke(() =>
                             {
                                 bool fs = false;
-                                Boolean.TryParse(command[1].ToString(), out fs);
+                                Boolean.TryParse(cmd[1].ToString(), out fs);
                                 isFullscreen = fs;
                                 if(isFullscreen)
                                 {
