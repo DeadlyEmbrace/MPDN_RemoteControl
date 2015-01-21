@@ -1,21 +1,14 @@
-﻿using Microsoft.Win32;
-using System;
-using System.Collections.Generic;
+﻿using System;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
+using Microsoft.Win32;
 
 namespace MPDN_RemoteControl
 {
@@ -25,27 +18,23 @@ namespace MPDN_RemoteControl
     public partial class RemoteControl : Window
     {
         #region Variables
-        private Socket server;
-        private StreamWriter writer;
-        private Guid myGuid;
-        private Guid ClientAuthGuid;
-        private string playState = "None";
-        private Timer DurationTimer;
-        private TimeSpan Duration;
-        private bool movingSlider = false;
-        private string currentFile;
-        private bool isFullscreen = false;
-        private ClientGUID guidManager = new ClientGUID();
+        private Socket _server;
+        private StreamWriter _writer;
+        private Guid _myGuid;
+        private Guid _clientAuthGuid;
+        private string _playState = "None";
+        private TimeSpan _duration;
+        private bool _movingSlider = false;
+        private string _currentFile;
+        private bool _isFullscreen = false;
+        private readonly ClientGuid _guidManager = new ClientGuid();
         #endregion
 
         #region Constuctor
         public RemoteControl()
         {
             InitializeComponent();
-            DurationTimer = new Timer(100);
-            DurationTimer.Elapsed += DurationTimer_Elapsed;
-            DurationTimer.Start();
-            ClientAuthGuid = guidManager.GetGuid;
+            _clientAuthGuid = _guidManager.GetGuid;
         }
         #endregion
 
@@ -57,9 +46,9 @@ namespace MPDN_RemoteControl
         {
             Dispatcher.Invoke(() =>
                 {
-                    btnConnect.IsEnabled = isEnabled;
-                    btnDisconnect.IsEnabled = !isEnabled;
-                    txbIP.IsEnabled = isEnabled;
+                    BtnConnect.IsEnabled = isEnabled;
+                    BtnDisconnect.IsEnabled = !isEnabled;
+                    TxbIp.IsEnabled = isEnabled;
                 });
         }
 
@@ -71,30 +60,30 @@ namespace MPDN_RemoteControl
         {
             Dispatcher.Invoke(() =>
                 {
-                    sldrSpan.IsEnabled = isEnabled;
-                    btnBrowse.IsEnabled = isEnabled;
-                    btnPlayPause.IsEnabled = isEnabled;
-                    btnStop.IsEnabled = isEnabled;
-                    btnFullscreen.IsEnabled = isEnabled;
+                    SldrSpan.IsEnabled = isEnabled;
+                    BtnBrowse.IsEnabled = isEnabled;
+                    BtnPlayPause.IsEnabled = isEnabled;
+                    BtnStop.IsEnabled = isEnabled;
+                    BtnFullscreen.IsEnabled = isEnabled;
                 });
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
             SetConnectButtonState(false);
-            string IP = txbIP.Text;
-            if (!String.IsNullOrEmpty(IP))
+            string ip = TxbIp.Text;
+            if (!String.IsNullOrEmpty(ip))
             {
-                var addr = IP.Split(':');
+                var addr = ip.Split(':');
                 if (addr.Count() == 2)
                 {
-                    IPAddress IPAddr;
-                    IPAddress.TryParse(addr[0], out IPAddr);
+                    IPAddress ipAddr;
+                    IPAddress.TryParse(addr[0], out ipAddr);
                     int port = 0;
                     int.TryParse(addr[1], out port);
-                    if (port != 0 && IPAddr != null)
+                    if (port != 0 && ipAddr != null)
                     {
-                        Task.Run(() => ClientConnect(IPAddr, port));
+                        Task.Run(() => ClientConnect(ipAddr, port));
                     }
                     else
                     {
@@ -120,20 +109,20 @@ namespace MPDN_RemoteControl
             try
             {
                 IPEndPoint serverEndpoint = new IPEndPoint(ip, port);
-                server = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-                server.Connect(serverEndpoint);
-                NetworkStream nStream = new NetworkStream(server);
+                _server = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                _server.Connect(serverEndpoint);
+                NetworkStream nStream = new NetworkStream(_server);
                 StreamReader reader = new StreamReader(nStream);
-                writer = new StreamWriter(nStream);
+                _writer = new StreamWriter(nStream);
 
-                Dispatcher.Invoke(() => lblState.Content = "Auth Code:" + ClientAuthGuid.ToString());
-                PassCommandToServer(ClientAuthGuid.ToString());
+                Dispatcher.Invoke(() => LblState.Content = "Auth Code:" + _clientAuthGuid.ToString());
+                PassCommandToServer(_clientAuthGuid.ToString());
 
 
                 Dispatcher.Invoke(() =>
                 {
-                    btnBrowse.IsEnabled = true;
-                    btnDisconnect.IsEnabled = true;
+                    BtnBrowse.IsEnabled = true;
+                    BtnDisconnect.IsEnabled = true;
                 });
                 while (true)
                 {
@@ -174,64 +163,64 @@ namespace MPDN_RemoteControl
                         ForcedDisconnect();
                         break;
                     case "ClientGUID":
-                        if (Guid.TryParse(cmd[1], out myGuid))
+                        if (Guid.TryParse(cmd[1], out _myGuid))
                         {
-                            Dispatcher.Invoke(() => lblStatus.Content = "Status: Connected");
-                            PassCommandToServer("GetCurrentState|" + myGuid.ToString());
+                            Dispatcher.Invoke(() => LblStatus.Content = "Status: Connected");
+                            PassCommandToServer("GetCurrentState|" + _myGuid.ToString());
                         }
                         break;
                     case "Playing":
                         Dispatcher.Invoke(() =>
                         {
-                            currentFile = cmd[1];
-                            lblFile.Content = cmd[1];
-                            lblState.Content = "Playing";
-                            playState = "Playing";
-                            btnPlayPause.Content = "Pause";
-                            btnPlayPause.IsEnabled = true;
-                            sldrSpan.IsEnabled = true;
-                            btnStop.IsEnabled = true;
-                            btnFullscreen.IsEnabled = true;
+                            _currentFile = cmd[1];
+                            LblFile.Content = cmd[1];
+                            LblState.Content = "Playing";
+                            _playState = "Playing";
+                            BtnPlayPause.Content = "Pause";
+                            BtnPlayPause.IsEnabled = true;
+                            SldrSpan.IsEnabled = true;
+                            BtnStop.IsEnabled = true;
+                            BtnFullscreen.IsEnabled = true;
                         });
-                        PassCommandToServer("GetDuration|" + myGuid.ToString());
+                        PassCommandToServer("GetDuration|" + _myGuid.ToString());
                         break;
                     case "Paused":
                         Dispatcher.Invoke(() =>
                         {
-                            lblFile.Content = cmd[1];
-                            lblState.Content = "Paused";
-                            playState = "Paused";
-                            btnPlayPause.Content = "Play";
+                            LblFile.Content = cmd[1];
+                            LblState.Content = "Paused";
+                            _playState = "Paused";
+                            BtnPlayPause.Content = "Play";
                         });
                         break;
                     case "Stopped":
                         Dispatcher.Invoke(() =>
                         {
-                            lblFile.Content = cmd[1];
-                            lblState.Content = "Stopped";
-                            playState = "Stopped";
-                            btnPlayPause.Content = "Play";
-                            btnStop.IsEnabled = false;
+                            LblFile.Content = cmd[1];
+                            LblState.Content = "Stopped";
+                            _playState = "Stopped";
+                            BtnPlayPause.Content = "Play";
+                            BtnStop.IsEnabled = false;
                         });
                         break;
                     case "Closed":
                         Dispatcher.Invoke(() =>
                             {
-                                lblFile.Content = "None";
-                                lblState.Content = "Disconnected";
-                                playState = "Disconnected";
-                                btnPlayPause.Content = "Play";
-                                currentFile = String.Empty;
+                                LblFile.Content = "None";
+                                LblState.Content = "Disconnected";
+                                _playState = "Disconnected";
+                                BtnPlayPause.Content = "Play";
+                                _currentFile = String.Empty;
                             });
                         break;
                     case "Closing":
                         Dispatcher.Invoke(() =>
                             {
-                                currentFile = String.Empty;
-                                lblFile.Content = "None";
-                                lblState.Content = "Disconnected";
-                                playState = "Disconnected";
-                                btnPlayPause.Content = "Play";
+                                _currentFile = String.Empty;
+                                LblFile.Content = "None";
+                                LblState.Content = "Disconnected";
+                                _playState = "Disconnected";
+                                BtnPlayPause.Content = "Play";
                                 CloseConnection();
                             });
                         break;
@@ -244,9 +233,9 @@ namespace MPDN_RemoteControl
                                         long dur = 0;
                                         long.TryParse(cmd[1], out dur);
                                         var span = TimeSpan.FromTicks(dur * 10);
-                                        string strDuration = span.Hours.ToString("00") + ":" + span.Minutes.ToString("00") + ":" + span.Seconds.ToString("00") + "\\" + Duration;
-                                        sldrSpan.Value = span.TotalSeconds;
-                                        lblPosition.Content = strDuration;
+                                        string strDuration = span.Hours.ToString("00") + ":" + span.Minutes.ToString("00") + ":" + span.Seconds.ToString("00") + "\\" + _duration;
+                                        SldrSpan.Value = span.TotalSeconds;
+                                        LblPosition.Content = strDuration;
 
                                 });
                         }
@@ -258,22 +247,22 @@ namespace MPDN_RemoteControl
                     case "FullLength":
                         long fullDur = 0;
                         long.TryParse(cmd[1], out fullDur);
-                        Duration = TimeSpan.FromMilliseconds(fullDur / 1000);
-                        Dispatcher.Invoke(() => sldrSpan.Maximum = Duration.TotalSeconds);
+                        _duration = TimeSpan.FromMilliseconds(fullDur / 1000);
+                        Dispatcher.Invoke(() => SldrSpan.Maximum = _duration.TotalSeconds);
                         break;
                     case "Fullscreen":
                         Dispatcher.Invoke(() =>
                             {
                                 bool fs = false;
                                 Boolean.TryParse(cmd[1].ToString(), out fs);
-                                isFullscreen = fs;
-                                if(isFullscreen)
+                                _isFullscreen = fs;
+                                if(_isFullscreen)
                                 {
-                                    btnFullscreen.Content = "Exit Fullscreen";
+                                    BtnFullscreen.Content = "Exit Fullscreen";
                                 }
                                 else
                                 {
-                                    btnFullscreen.Content = "Go Fullscreen";
+                                    BtnFullscreen.Content = "Go Fullscreen";
                                 }
                             });
                         break;
@@ -286,37 +275,15 @@ namespace MPDN_RemoteControl
         }
 
         /// <summary>
-        /// DurationTimer elapsed
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        void DurationTimer_Elapsed(object sender, ElapsedEventArgs e)
-        {
-            if (playState == "Playing")
-            {
-                GetLocation();
-            }
-        }
-
-        /// <summary>
-        /// Request the current playback location from MPDN
-        /// </summary>
-        private void GetLocation()
-        {
-            writer.WriteLine("GetLocation|" + myGuid.ToString());
-            writer.Flush();
-        }
-
-        /// <summary>
         /// Should be called when the user or the server closes the connection
         /// </summary>
         private void CloseConnection()
         {
-            writer.Close();
-            server.Close();
-            myGuid = Guid.Empty;
-            writer = null;
-            server = null;
+            _writer.Close();
+            _server.Close();
+            _myGuid = Guid.Empty;
+            _writer = null;
+            _server = null;
             SetConnectButtonState(true);
             SetPlaybackButtonState(false);
         }
@@ -329,7 +296,7 @@ namespace MPDN_RemoteControl
             {
                 var file = openFile.FileName;
                 PassCommandToServer("Open|" + openFile.FileName);
-                btnPlayPause.IsEnabled = true;
+                BtnPlayPause.IsEnabled = true;
             }
         }
 
@@ -341,10 +308,10 @@ namespace MPDN_RemoteControl
         {
             try
             {
-                if (writer != null)
+                if (_writer != null)
                 {
-                    writer.WriteLine(cmd);
-                    writer.Flush();
+                    _writer.WriteLine(cmd);
+                    _writer.Flush();
                 }
             }
             catch(Exception)
@@ -355,16 +322,16 @@ namespace MPDN_RemoteControl
         {
             SetConnectButtonState(true);
             SetPlaybackButtonState(false);
-            Dispatcher.Invoke(() => lblStatus.Content = "Status: Not Connected - Not Authorized");
-            writer.Close();
-            writer = null;
-            server.Close();
-            server = null;
+            Dispatcher.Invoke(() => LblStatus.Content = "Status: Not Connected - Not Authorized");
+            _writer.Close();
+            _writer = null;
+            _server.Close();
+            _server = null;
         }
 
         private void btnPlayPause_Click(object sender, RoutedEventArgs e)
         {
-            if(playState == "Stopped" || playState == "Paused")
+            if(_playState == "Stopped" || _playState == "Paused")
             {
                 PassCommandToServer("Play|False");
             }
@@ -385,40 +352,40 @@ namespace MPDN_RemoteControl
 
         private void sldrSpan_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            if (movingSlider)
+            if (_movingSlider)
             {
-                PassCommandToServer("Seek|" + sldrSpan.Value * 1000000);
+                PassCommandToServer("Seek|" + SldrSpan.Value * 1000000);
             }
         }
 
         private void sldrSpan_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
         {
-            movingSlider = true;
+            _movingSlider = true;
             PassCommandToServer("Pause|False");
         }
 
         private void sldrSpan_PreviewMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
         {
-            movingSlider = false;
+            _movingSlider = false;
             PassCommandToServer("Play|False");
         }
 
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        private void Window_Closing(object sender, CancelEventArgs e)
         {
-            PassCommandToServer("Exit|" + myGuid);
+            PassCommandToServer("Exit|" + _myGuid);
         }
 
         private void btnDisconnect_Click(object sender, RoutedEventArgs e)
         {
-            PassCommandToServer("Exit|" + myGuid);
+            PassCommandToServer("Exit|" + _myGuid);
             SetConnectButtonState(true);
             SetPlaybackButtonState(false);
-            lblStatus.Content = "Status: Not Connected";
+            LblStatus.Content = "Status: Not Connected";
         }
 
         private void btnFullscreen_Click(object sender, RoutedEventArgs e)
         {
-            if(!isFullscreen)
+            if(!_isFullscreen)
                 PassCommandToServer("FullScreen|True");
             else
                 PassCommandToServer("FullScreen|False");

@@ -8,12 +8,12 @@ using System.Windows;
 
 namespace MPDN_RemoteControl
 {
-    public class ClientGUID
+    public class ClientGuid
     {
         #region Variables
-        private Guid myGUID;
-        private string filePath = "myguid.conf";
-        private Guid nullGUID = Guid.Parse("{00000000-0000-0000-0000-000000000000}");
+        private Guid _myGuid;
+        private string _filePath = "myguid.conf";
+        private Guid _nullGuid = Guid.Parse("{00000000-0000-0000-0000-000000000000}");
         #endregion
 
         #region Properties
@@ -21,22 +21,22 @@ namespace MPDN_RemoteControl
         {
             get
             {
-                GetMyGUID();
-                return myGUID;
+                GetMyGuid();
+                return _myGuid;
             }
         }
         #endregion
 
-        private void CreateMyGUID()
+        private void CreateMyGuid()
         {
             try
             {
-                if (!File.Exists(filePath))
+                if (!File.Exists(_filePath))
                 {
-                    myGUID = Guid.NewGuid();
-                    var file = File.Open(filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+                    _myGuid = Guid.NewGuid();
+                    var file = File.Open(_filePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
                     StreamWriter writer = new StreamWriter(file);
-                    writer.WriteLine(myGUID);
+                    writer.WriteLine(_myGuid);
                     writer.Flush();
                     writer.Close();
                 }
@@ -47,33 +47,33 @@ namespace MPDN_RemoteControl
             }
         }
 
-        private string ReadMyGUID()
+        private string ReadMyGuid()
         {
-            string fileGUID = String.Empty;
-            if(File.Exists(filePath))
+            string fileGuid = String.Empty;
+            if(File.Exists(_filePath))
             {
-                var file = File.Open(filePath, FileMode.Open, FileAccess.Read);
+                var file = File.Open(_filePath, FileMode.Open, FileAccess.Read);
                 StreamReader reader = new StreamReader(file);
-                fileGUID = reader.ReadLine();
+                fileGuid = reader.ReadLine();
                 reader.Close();
             }
 
-            return fileGUID;
+            return fileGuid;
         }
 
-        private void GetMyGUID()
+        private void GetMyGuid()
         {
-            if (myGUID == nullGUID)
+            if (_myGuid == _nullGuid)
             {
                 //First try to read the guid from the file
-                string readGUID = ReadMyGUID();
-                if(String.IsNullOrEmpty(readGUID))
+                string readGuid = ReadMyGuid();
+                if(String.IsNullOrEmpty(readGuid))
                 {
-                    CreateMyGUID();
+                    CreateMyGuid();
                 }
                 else
                 {
-                    Guid.TryParse(readGUID, out myGUID);
+                    Guid.TryParse(readGuid, out _myGuid);
                 }
             }
         }
