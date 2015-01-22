@@ -285,12 +285,32 @@ namespace MPDN_RemoteControl
                             }
                         });
                         break;
+                    case "Volume":
+                        Dispatcher.Invoke(() =>
+                        {
+                            int vol = -1;
+                            int.TryParse(cmd[1], out vol);
+                            if (vol >= 0)
+                            {
+                                SldrVolume.ValueChanged -= sldrVolume_ValueChanged;
+                                SldrVolume.Value = vol;
+                                LblLevel.Content = vol;
+                                SldrVolume.ValueChanged += sldrVolume_ValueChanged;
+                            }
+                        });
+                        break;
                 }
             }
             else
             {
                 //Invalid command
             }
+        }
+
+        private void sldrVolume_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            LblLevel.Content = (int)SldrVolume.Value;
+            PassCommandToServer("Volume|" + (int)SldrVolume.Value);
         }
 
         /// <summary>
