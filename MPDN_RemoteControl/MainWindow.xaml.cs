@@ -1,9 +1,13 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics.Eventing.Reader;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Timers;
 using System.Windows;
@@ -29,15 +33,23 @@ namespace MPDN_RemoteControl
         private bool _isFullscreen = false;
         private bool _muted = false;
         private readonly ClientGuid _guidManager = new ClientGuid();
+        private ObservableCollection<Chapter> showChapters = new ObservableCollection<Chapter>(); 
         #endregion
 
         #region Constuctor
         public RemoteControl()
         {
             InitializeComponent();
+            this.DataContext = this;
             _clientAuthGuid = _guidManager.GetGuid;
         }
         #endregion
+
+        public ObservableCollection<Chapter> ShowChapters
+        {
+            get { return showChapters;}
+            set { showChapters = value; }
+        } 
 
         /// <summary>
         /// Set the state of the Connect Button
@@ -233,12 +245,20 @@ namespace MPDN_RemoteControl
                             Dispatcher.Invoke(() =>
                                 {
 
-                                        long dur = 0;
-                                        long.TryParse(cmd[1], out dur);
-                                        var span = TimeSpan.FromTicks(dur * 10);
-                                        string strDuration = span.Hours.ToString("00") + ":" + span.Minutes.ToString("00") + ":" + span.Seconds.ToString("00") + "\\" + _duration;
-                                        SldrSpan.Value = span.TotalSeconds;
-                                        LblPosition.Content = strDuration;
+                                    long dur = 0;
+                                    long.TryParse(cmd[1], out dur);
+                                    var span = TimeSpan.FromTicks(dur * 10);
+                                    var currChapter = showChapters.FirstOrDefault(t => t.ChapterLocation >= dur);
+                                    if (currChapter != null && cbChapters.SelectedIndex != currChapter.ChapterIndex)
+                                    {
+                                        cbChapters.SelectionChanged -= cbChapters_SelectionChanged;
+                                        cbChapters.SelectedIndex = (currChapter.ChapterIndex - 2);
+                                        cbChapters.SelectionChanged += cbChapters_SelectionChanged;
+                                    }
+
+                                    string strDuration = span.Hours.ToString("00") + ":" + span.Minutes.ToString("00") + ":" + span.Seconds.ToString("00") + "\\" + _duration;
+                                    SldrSpan.Value = span.TotalSeconds;
+                                    LblPosition.Content = strDuration;
 
                                 });
                         }
@@ -299,12 +319,53 @@ namespace MPDN_RemoteControl
                             }
                         });
                         break;
+                    case "Chapters":
+                        DisplayChapters(cmd[1]);
+                        break;
                 }
             }
             else
             {
                 //Invalid command
             }
+        }
+
+        private void DisplayChapters(string chapters)
+        {
+            try
+            {
+                Dispatcher.Invoke(() => showChapters.Clear());
+                var chapterStrings = Regex.Split(chapters, "]]");
+                foreach (var singleChapter in chapterStrings)
+                {
+                    var splitData = Regex.Split(singleChapter, ">>");
+                    int chapterNumber = -1;
+                    int.TryParse(splitData[0], out chapterNumber);
+                    if (chapterNumber > 0)
+                    {
+                        long loc = -1;
+                        long.TryParse(splitData[2], out loc);
+                        Chapter tmpChapter = new Chapter() {ChapterIndex = chapterNumber, ChapterName = splitData[1], ChapterLocation = loc};
+                        Dispatcher.Invoke(() => showChapters.Add(tmpChapter));
+                    }
+                }
+                Dispatcher.Invoke(() =>
+                {
+                    if (showChapters.Count > 0)
+                        cbChapters.IsEnabled = true;
+                    else
+                        cbChapters.IsEnabled = false;
+                });
+
+            }
+            catch (Exception ex)
+            {
+                
+                throw;
+            }
+
+
+
         }
 
         private void sldrVolume_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
@@ -421,6 +482,8 @@ namespace MPDN_RemoteControl
             SetConnectButtonState(true);
             SetPlaybackButtonState(false);
             LblStatus.Content = "Status: Not Connected";
+            showChapters.Clear();
+            cbChapters.IsEnabled = false;
         }
 
         private void btnFullscreen_Click(object sender, RoutedEventArgs e)
@@ -437,6 +500,13 @@ namespace MPDN_RemoteControl
                 PassCommandToServer("Mute|True");
             else
                 PassCommandToServer("Mute|False");
+        }
+
+        private void cbChapters_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            var item = cbChapters.SelectedItem as Chapter;
+            if(item != null)
+                PassCommandToServer("Seek|" + item.ChapterLocation);
         }
     }
 }
