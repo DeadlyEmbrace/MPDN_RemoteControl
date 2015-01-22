@@ -1,7 +1,7 @@
 ﻿<Window x:Class="MPDN_RemoteControl.RemoteControl"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="RemoteControl" Height="300" Width="461" Closing="Window_Closing">
+        Title="RemoteControl" Height="300" Width="462" Closing="Window_Closing">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="100*"/>
@@ -28,6 +28,7 @@
         <Slider x:Name="SldrSpan" Margin="10,144,10,0" Grid.Row="1" VerticalAlignment="Top" Grid.ColumnSpan="2" ValueChanged="sldrSpan_ValueChanged" PreviewMouseLeftButtonDown="sldrSpan_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="sldrSpan_PreviewMouseLeftButtonUp" IsEnabled="False"/>
         <Button x:Name="BtnDisconnect" Content="Disconnect" Grid.Column="1" HorizontalAlignment="Left" Margin="246,10,0,0" VerticalAlignment="Top" Width="97" IsEnabled="False" Height="26" Click="btnDisconnect_Click"/>
         <Button x:Name="BtnFullscreen" Content="Go FullScreen" Grid.Column="1" HorizontalAlignment="Left" Margin="178,171,0,0" Grid.Row="1" VerticalAlignment="Top" Width="86" IsEnabled="False" Click="btnFullscreen_Click" Height="21"/>
+        <Button x:Name="BtnMute" Content="Mute" Grid.Column="1" Margin="269,171,0,0" Grid.Row="1" VerticalAlignment="Top" Height="21" HorizontalAlignment="Left" Width="75" IsEnabled="False" Click="BtnMute_Click"/>
 
     </Grid>
 </Window>

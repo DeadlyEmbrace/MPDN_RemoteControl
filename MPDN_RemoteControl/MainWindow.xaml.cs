@@ -27,6 +27,7 @@ namespace MPDN_RemoteControl
         private bool _movingSlider = false;
         private string _currentFile;
         private bool _isFullscreen = false;
+        private bool _muted = false;
         private readonly ClientGuid _guidManager = new ClientGuid();
         #endregion
 
@@ -65,6 +66,7 @@ namespace MPDN_RemoteControl
                     BtnPlayPause.IsEnabled = isEnabled;
                     BtnStop.IsEnabled = isEnabled;
                     BtnFullscreen.IsEnabled = isEnabled;
+                    BtnMute.IsEnabled = isEnabled;
                 });
         }
 
@@ -181,6 +183,7 @@ namespace MPDN_RemoteControl
                             SldrSpan.IsEnabled = true;
                             BtnStop.IsEnabled = true;
                             BtnFullscreen.IsEnabled = true;
+                            BtnMute.IsEnabled = true;
                         });
                         PassCommandToServer("GetDuration|" + _myGuid.ToString());
                         break;
@@ -266,6 +269,22 @@ namespace MPDN_RemoteControl
                                 }
                             });
                         break;
+                    case "Mute":
+                        Dispatcher.Invoke(() =>
+                        {
+                            bool muted = false;
+                            Boolean.TryParse(cmd[1], out muted);
+                            _muted = muted;
+                            if (muted)
+                            {
+                                BtnMute.Content = "Unmute";
+                            }
+                            else
+                            {
+                                BtnMute.Content = "Mute";
+                            }
+                        });
+                        break;
                 }
             }
             else
@@ -314,8 +333,9 @@ namespace MPDN_RemoteControl
                     _writer.Flush();
                 }
             }
-            catch(Exception)
-            { }
+            catch (Exception)
+            {
+            }
         }
 
         private void ForcedDisconnect()
@@ -389,6 +409,14 @@ namespace MPDN_RemoteControl
                 PassCommandToServer("FullScreen|True");
             else
                 PassCommandToServer("FullScreen|False");
+        }
+
+        private void BtnMute_Click(object sender, RoutedEventArgs e)
+        {
+            if(!_muted)
+                PassCommandToServer("Mute|True");
+            else
+                PassCommandToServer("Mute|False");
         }
     }
 }
