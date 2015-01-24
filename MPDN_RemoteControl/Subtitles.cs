@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace MPDN_RemoteControl
+﻿namespace MPDN_RemoteControl
 {
     public class Subtitles
     {

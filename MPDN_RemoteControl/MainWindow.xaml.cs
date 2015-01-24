@@ -28,13 +28,15 @@ namespace MPDN_RemoteControl
         private Guid _clientAuthGuid;
         private string _playState = "None";
         private TimeSpan _duration;
+        private long _currenLocation;
         private bool _movingSlider = false;
         private string _currentFile;
         private bool _isFullscreen = false;
         private bool _muted = false;
         private readonly ClientGuid _guidManager = new ClientGuid();
-        private ObservableCollection<Chapter> showChapters = new ObservableCollection<Chapter>();
+        private ObservableCollection<Chapter> _showChapters = new ObservableCollection<Chapter>();
         private ObservableCollection<Subtitles> _showSubtitles = new ObservableCollection<Subtitles>();
+        private ObservableCollection<Audio> _audioTracks = new ObservableCollection<Audio>(); 
         #endregion
 
         #region Constuctor
@@ -49,8 +51,8 @@ namespace MPDN_RemoteControl
         #region Properties
         public ObservableCollection<Chapter> ShowChapters
         {
-            get { return showChapters;}
-            set { showChapters = value; }
+            get { return _showChapters;}
+            set { _showChapters = value; }
         }
 
         public ObservableCollection<Subtitles> ShowSubtitles
@@ -58,6 +60,13 @@ namespace MPDN_RemoteControl
             get { return _showSubtitles; }
             set { _showSubtitles = value; }
         }
+
+        public ObservableCollection<Audio> ShowAudioTracks
+        {
+            get { return _audioTracks; }
+            set { _audioTracks = value; }
+        }
+
         #endregion
 
         /// <summary>
@@ -82,12 +91,15 @@ namespace MPDN_RemoteControl
         {
             Dispatcher.Invoke(() =>
                 {
-                    SldrSpan.IsEnabled = isEnabled;
-                    BtnBrowse.IsEnabled = isEnabled;
-                    BtnPlayPause.IsEnabled = isEnabled;
-                    BtnStop.IsEnabled = isEnabled;
-                    BtnFullscreen.IsEnabled = isEnabled;
-                    BtnMute.IsEnabled = isEnabled;
+                    if (BtnPlayPause.IsEnabled != isEnabled)
+                    {
+                        SldrSpan.IsEnabled = isEnabled;
+                        BtnBrowse.IsEnabled = isEnabled;
+                        BtnPlayPause.IsEnabled = isEnabled;
+                        BtnStop.IsEnabled = isEnabled;
+                        BtnFullscreen.IsEnabled = isEnabled;
+                        BtnMute.IsEnabled = isEnabled;
+                    }
                 });
         }
 
@@ -215,6 +227,7 @@ namespace MPDN_RemoteControl
                             LblState.Content = "Paused";
                             _playState = "Paused";
                             BtnPlayPause.Content = "Play";
+                            SetPlaybackButtonState(true);
                         });
                         break;
                     case "Stopped":
@@ -254,10 +267,10 @@ namespace MPDN_RemoteControl
                             Dispatcher.Invoke(() =>
                                 {
 
-                                    long dur = 0;
-                                    long.TryParse(cmd[1], out dur);
-                                    var span = TimeSpan.FromTicks(dur * 10);
-                                    var currChapter = showChapters.FirstOrDefault(t => t.ChapterLocation >= dur);
+                                    _currenLocation = 0;
+                                    long.TryParse(cmd[1], out _currenLocation);
+                                    var span = TimeSpan.FromTicks(_currenLocation * 10);
+                                    var currChapter = _showChapters.FirstOrDefault(t => t.ChapterLocation >= _currenLocation);
                                     if (currChapter != null && cbChapters.SelectedIndex != currChapter.ChapterIndex)
                                     {
                                         cbChapters.SelectionChanged -= cbChapters_SelectionChanged;
@@ -334,12 +347,114 @@ namespace MPDN_RemoteControl
                     case "Subtitles":
                         DisplaySubtitles(cmd[1]);
                         break;
+                    case "SubChanged":
+                        ChangeActiveSubtitles(cmd[1]);
+                        break;
+                    case "AudioTracks":
+                        DisplayAudioTracks(cmd[1]);
+                        break;
+                    case "AudioChanged":
+                        break;
                 }
             }
             else
             {
                 //Invalid command
             }
+        }
+
+        private void DisplayAudioTracks(string audioTracks)
+        {
+            try
+            {
+                Dispatcher.Invoke(() => _audioTracks.Clear());
+                var audioSubstrings = Regex.Split(audioTracks, "]]");
+                foreach (var track in audioSubstrings)
+                {
+                    var splitData = Regex.Split(track, ">>");
+
+                    int trNumber = -1;
+                    int.TryParse(splitData[0], out trNumber);
+                    bool isActive = false;
+                    Boolean.TryParse(splitData[3], out isActive);
+                    if (trNumber > 0)
+                    {
+                        Audio tmpAudio = new Audio()
+                        {
+                            Description = splitData[1],
+                            Type = splitData[2],
+                            Active = isActive
+                        };
+                        Dispatcher.Invoke(() => _audioTracks.Add(tmpAudio));
+                    }
+                }
+                UpdateAudioControl();
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        private void ChangeActiveAudioTrack(string track)
+        {
+            var currentTrack = _audioTracks.FirstOrDefault(t => t.Active);
+            if (currentTrack != null && currentTrack.Description != track)
+            {
+                currentTrack.Active = false;
+                var newTrack = _audioTracks.FirstOrDefault(t => t.Description == track);
+                if (newTrack != null)
+                    newTrack.Active = true;
+                UpdateAudioControl();
+            }
+        }
+
+        private void UpdateAudioControl()
+        {
+            Dispatcher.Invoke(() =>
+            {
+                if (_audioTracks.Count > 0)
+                {
+                    cbAudio.IsEnabled = true;
+                    cbAudio.SelectionChanged -= cbAudio_SelectionChanged;
+                    cbAudio.SelectedItem = _audioTracks.FirstOrDefault(t => t.Active);
+                    cbAudio.SelectionChanged += cbAudio_SelectionChanged;
+                }
+                else
+                    cbAudio.IsEnabled = false;
+
+            });
+        }
+
+
+        private void ChangeActiveSubtitles(string subDesc)
+        {
+            var currentSub = _showSubtitles.FirstOrDefault(t => t.ActiveSub);
+            if(currentSub != null && currentSub.SubtitleDesc != subDesc)
+            {
+                currentSub.ActiveSub = false;
+                var newSubs = _showSubtitles.FirstOrDefault(t => t.SubtitleDesc == subDesc);
+                if(newSubs != null)
+                    newSubs.ActiveSub = true;
+                UpdateSubControl();
+            }
+
+        }
+
+        private void UpdateSubControl()
+        {
+            Dispatcher.Invoke(() =>
+            {
+                if (_showSubtitles.Count > 0)
+                {
+                    cbSubtitles.IsEnabled = true;
+                    cbSubtitles.SelectionChanged -= cbSubtitles_SelectionChanged;
+                    cbSubtitles.SelectedItem = _showSubtitles.FirstOrDefault(t => t.ActiveSub);
+                    cbSubtitles.SelectionChanged += cbSubtitles_SelectionChanged;
+                }
+                else
+                    cbSubtitles.IsEnabled = false;
+            });
         }
 
         private void DisplaySubtitles(string subs)
@@ -362,18 +477,7 @@ namespace MPDN_RemoteControl
                         Dispatcher.Invoke(() => _showSubtitles.Add(tmpSub));
                     }
                 }
-                Dispatcher.Invoke(() =>
-                    {
-                        if (_showSubtitles.Count > 0)
-                        {
-                            cbSubtitles.IsEnabled = true;
-                            cbSubtitles.SelectionChanged -= cbSubtitles_SelectionChanged;
-                            cbSubtitles.SelectedItem = _showSubtitles.FirstOrDefault(t => t.ActiveSub);
-                            cbSubtitles.SelectionChanged += cbSubtitles_SelectionChanged;
-                        }
-                        else
-                            cbSubtitles.IsEnabled = false;
-                    });
+                UpdateSubControl();
             }
             catch(Exception)
             {
@@ -385,7 +489,7 @@ namespace MPDN_RemoteControl
         {
             try
             {
-                Dispatcher.Invoke(() => showChapters.Clear());
+                Dispatcher.Invoke(() => _showChapters.Clear());
                 var chapterStrings = Regex.Split(chapters, "]]");
                 foreach (var singleChapter in chapterStrings)
                 {
@@ -397,13 +501,22 @@ namespace MPDN_RemoteControl
                         long loc = -1;
                         long.TryParse(splitData[2], out loc);
                         Chapter tmpChapter = new Chapter() {ChapterIndex = chapterNumber, ChapterName = splitData[1], ChapterLocation = loc};
-                        Dispatcher.Invoke(() => showChapters.Add(tmpChapter));
+                        Dispatcher.Invoke(() => _showChapters.Add(tmpChapter));
                     }
                 }
                 Dispatcher.Invoke(() =>
                 {
-                    if (showChapters.Count > 0)
+                    if (_showChapters.Count > 0)
+                    {
+                        var currChapter = _showChapters.FirstOrDefault(t => t.ChapterLocation >= _currenLocation);
+                        if (currChapter != null && cbChapters.SelectedIndex != currChapter.ChapterIndex)
+                        {
+                            cbChapters.SelectionChanged -= cbChapters_SelectionChanged;
+                            cbChapters.SelectedIndex = (currChapter.ChapterIndex - 2);
+                            cbChapters.SelectionChanged += cbChapters_SelectionChanged;
+                        }
                         cbChapters.IsEnabled = true;
+                    }
                     else
                         cbChapters.IsEnabled = false;
                 });
@@ -533,10 +646,24 @@ namespace MPDN_RemoteControl
             SetConnectButtonState(true);
             SetPlaybackButtonState(false);
             LblStatus.Content = "Status: Not Connected";
-            showChapters.Clear();
+            cbChapters.SelectionChanged -= cbChapters_SelectionChanged;
+            _showChapters.Clear();
+            cbChapters.SelectionChanged += cbChapters_SelectionChanged;
+            cbSubtitles.SelectionChanged -= cbSubtitles_SelectionChanged;
+            _showSubtitles.Clear();
+            cbSubtitles.SelectionChanged -= cbSubtitles_SelectionChanged;
+            cbAudio.SelectionChanged -= cbAudio_SelectionChanged;
+            _audioTracks.Clear();
+            cbAudio.SelectionChanged += cbAudio_SelectionChanged;
             cbChapters.IsEnabled = false;
             cbSubtitles.IsEnabled = false;
             SldrVolume.IsEnabled = false;
+            cbAudio.IsEnabled = false;
+            _duration = new TimeSpan(0,0,0,0);
+            _currentFile = String.Empty;
+            LblPosition.Content = "00:00:00";
+            LblFile.Content = "None";
+            LblState.Content = "Not Connected";
         }
 
         private void btnFullscreen_Click(object sender, RoutedEventArgs e)
@@ -565,8 +692,13 @@ namespace MPDN_RemoteControl
         private void cbSubtitles_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
             var sub = cbSubtitles.SelectedItem as Subtitles;
+            if(sub != null)
+                PassCommandToServer("ActiveSubTrack|" + sub.SubtitleDesc);
+        }
 
-            PassCommandToServer("ActiveSubTrack|" + sub.SubtitleDesc);
+        private void cbAudio_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+
         }
     }
 }
