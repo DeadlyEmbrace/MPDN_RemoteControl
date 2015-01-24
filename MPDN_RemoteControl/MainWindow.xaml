@@ -12,33 +12,36 @@
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="42"/>
-            <RowDefinition/>
+            <RowDefinition Height="99*"/>
+            <RowDefinition Height="85*"/>
             <RowDefinition Height="24"/>
             <RowDefinition Height="44"/>
             <RowDefinition Height="25"/>
         </Grid.RowDefinitions>
         <Button x:Name="BtnConnect" Content="Conntect To MPDN" HorizontalAlignment="Left" VerticalAlignment="Top" Width="127" Margin="114,10,0,0" Click="Button_Click" Height="26" Grid.Column="1"/>
-        <Label x:Name="LblStatus" Content="Status: Not Connected" Margin="0,0,10,0" Grid.Row="4" VerticalAlignment="Center" HorizontalAlignment="Right" Width="129" Grid.Column="1" Height="25"/>
+        <Label x:Name="LblStatus" Content="Status: Not Connected" Margin="0,0,10,0" Grid.Row="5" VerticalAlignment="Center" HorizontalAlignment="Right" Width="129" Grid.Column="1" Height="25"/>
         <TextBox x:Name="TxbIp" HorizontalAlignment="Left" Height="23" Margin="81,12,0,0" TextWrapping="Wrap" Text="127.0.0.1:6545" VerticalAlignment="Top" Width="120" Grid.ColumnSpan="2"/>
         <Label Content="IP Address" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Height="26" Width="66"/>
         <Label Content="Current File:" Margin="10,10,10,0" Grid.Row="1" VerticalAlignment="Top" Height="17" Padding="0"/>
         <Label x:Name="LblFile" Content="None" Margin="0,10,10,0" Grid.Row="1" VerticalAlignment="Top" Grid.Column="1" Height="17" Padding="0"/>
-        <Button x:Name="BtnBrowse" Content="Browse and Play" HorizontalAlignment="Left" Margin="10,13,0,0" Grid.Row="3" VerticalAlignment="Top" Width="103" Click="btnBrowse_Click" Grid.ColumnSpan="2" Height="21" IsEnabled="False"/>
+        <Button x:Name="BtnBrowse" Content="Browse and Play" HorizontalAlignment="Left" Margin="10,13,0,0" Grid.Row="4" VerticalAlignment="Top" Width="103" Click="btnBrowse_Click" Grid.ColumnSpan="2" Height="21" IsEnabled="False"/>
         <Label Content="State:" Margin="10,32,10,0" Grid.Row="1" VerticalAlignment="Top" Height="16" Padding="0"/>
         <Label x:Name="LblState" Content="Unknown" Grid.Column="1" Margin="0,33,0,0" Grid.Row="1" VerticalAlignment="Top" Padding="0"/>
-        <Button x:Name="BtnPlayPause" Content="Play" Grid.Column="1" HorizontalAlignment="Left" Margin="18,13,0,0" Grid.Row="3" VerticalAlignment="Top" Width="75" Click="btnPlayPause_Click" IsEnabled="False" Height="21"/>
-        <Button x:Name="BtnStop" Content="Stop" Grid.Column="1" HorizontalAlignment="Left" Margin="98,13,0,0" Grid.Row="3" VerticalAlignment="Top" Width="75" Click="btnStop_Click" IsEnabled="False" Height="21"/>
+        <Button x:Name="BtnPlayPause" Content="Play" Grid.Column="1" HorizontalAlignment="Left" Margin="18,13,0,0" Grid.Row="4" VerticalAlignment="Top" Width="75" Click="btnPlayPause_Click" IsEnabled="False" Height="21"/>
+        <Button x:Name="BtnStop" Content="Stop" Grid.Column="1" HorizontalAlignment="Left" Margin="98,13,0,0" Grid.Row="4" VerticalAlignment="Top" Width="75" Click="btnStop_Click" IsEnabled="False" Height="21"/>
         <Label Content="Position:" Margin="10,53,10,0" Grid.Row="1" VerticalAlignment="Top" Padding="0"/>
         <Label x:Name="LblPosition" Content="00:00:00" Grid.Column="1" Margin="0,53,10,0" Grid.Row="1" VerticalAlignment="Top" Padding="0"/>
         <Slider x:Name="SldrSpan" Margin="10,74,10,0" Grid.Row="1" VerticalAlignment="Top" Grid.ColumnSpan="2" Grid.Column="0" ValueChanged="sldrSpan_ValueChanged" PreviewMouseLeftButtonDown="sldrSpan_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="sldrSpan_PreviewMouseLeftButtonUp" IsEnabled="False"/>
         <Button x:Name="BtnDisconnect" Content="Disconnect" Grid.Column="1" HorizontalAlignment="Left" Margin="246,10,0,0" VerticalAlignment="Top" Width="97" IsEnabled="False" Height="26" Click="btnDisconnect_Click"/>
-        <Button x:Name="BtnFullscreen" Content="Go FullScreen" Grid.Column="1" HorizontalAlignment="Left" Margin="178,13,0,0" Grid.Row="3" VerticalAlignment="Top" Width="86" IsEnabled="False" Click="btnFullscreen_Click" Height="21"/>
-        <Button x:Name="BtnMute" Content="Mute" Grid.Column="1" Margin="269,13,0,0" Grid.Row="3" VerticalAlignment="Top" Height="21" HorizontalAlignment="Left" Width="75" IsEnabled="False" Click="BtnMute_Click"/>
-        <Label Content="Volume" HorizontalAlignment="Left" Grid.Row="2" VerticalAlignment="Top" Width="53" Padding="0" Height="16" RenderTransformOrigin="0.5,0.5" Grid.Column="1" Margin="48,4,0,0"/>
-        <Slider x:Name="SldrVolume" HorizontalAlignment="Left" Grid.Row="2" Width="203" Margin="141,3,0,3" Maximum="100" Grid.Column="1" ValueChanged="sldrVolume_ValueChanged"/>
-        <Label x:Name="LblLevel" Content="0" Grid.Column="1" HorizontalAlignment="Left" Margin="108,4,0,4" Grid.Row="2" Padding="0"/>
-        <ComboBox ItemsSource="{Binding Path=(ShowChapters)}" SelectedValuePath="ChapterIndex" DisplayMemberPath="ChapterName" x:Name="cbChapters" HorizontalAlignment="Left" Margin="81,97,0,0" Grid.Row="1" VerticalAlignment="Top" Width="120" Grid.ColumnSpan="2" SelectionChanged="cbChapters_SelectionChanged"/>
-        <Label Content="Chapters" HorizontalAlignment="Left" Margin="10,101,0,0" Grid.Row="1" VerticalAlignment="Top" Padding="0"/>
+        <Button x:Name="BtnFullscreen" Content="Go FullScreen" Grid.Column="1" HorizontalAlignment="Left" Margin="178,13,0,0" Grid.Row="4" VerticalAlignment="Top" Width="86" IsEnabled="False" Click="btnFullscreen_Click" Height="21"/>
+        <Button x:Name="BtnMute" Content="Mute" Grid.Column="1" Margin="269,13,0,0" Grid.Row="4" VerticalAlignment="Top" Height="21" HorizontalAlignment="Left" Width="75" IsEnabled="False" Click="BtnMute_Click"/>
+        <Label Content="Volume" HorizontalAlignment="Left" Grid.Row="3" VerticalAlignment="Top" Width="53" Padding="0" Height="16" RenderTransformOrigin="0.5,0.5" Grid.Column="1" Margin="48,4,0,0"/>
+        <Slider x:Name="SldrVolume" HorizontalAlignment="Left" Grid.Row="3" Width="203" Margin="141,3,0,3" Maximum="100" Grid.Column="1" ValueChanged="sldrVolume_ValueChanged"/>
+        <Label x:Name="LblLevel" Content="0" Grid.Column="1" HorizontalAlignment="Left" Margin="108,4,0,4" Grid.Row="3" Padding="0"/>
+        <ComboBox ItemsSource="{Binding Path=(ShowChapters)}" SelectedValuePath="ChapterIndex" DisplayMemberPath="ChapterName" x:Name="cbChapters" HorizontalAlignment="Left" Margin="62,10,0,0" Grid.Row="2" VerticalAlignment="Top" Width="120" Grid.ColumnSpan="2" SelectionChanged="cbChapters_SelectionChanged"/>
+        <Label Content="Chapters" HorizontalAlignment="Left" Margin="10,13,0,0" Grid.Row="2" VerticalAlignment="Top" Padding="0"/>
+        <Label Content="Subtitles" Grid.Column="1" HorizontalAlignment="Left" Margin="114,13,0,0" Grid.Row="2" VerticalAlignment="Top" Padding="0"/>
+        <ComboBox ItemsSource="{Binding Path=ShowSubtitles}" SelectedValue="SubtitleDesc" DisplayMemberPath="SubtitleDesc" x:Name="cbSubtitles" Grid.Column="1" HorizontalAlignment="Left" Margin="165,10,0,0" Grid.Row="2" VerticalAlignment="Top" Width="120" SelectionChanged="cbSubtitles_SelectionChanged"/>
 
     </Grid>
 </Window>

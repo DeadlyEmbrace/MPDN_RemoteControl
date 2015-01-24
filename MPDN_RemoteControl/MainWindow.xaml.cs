@@ -33,7 +33,8 @@ namespace MPDN_RemoteControl
         private bool _isFullscreen = false;
         private bool _muted = false;
         private readonly ClientGuid _guidManager = new ClientGuid();
-        private ObservableCollection<Chapter> showChapters = new ObservableCollection<Chapter>(); 
+        private ObservableCollection<Chapter> showChapters = new ObservableCollection<Chapter>();
+        private ObservableCollection<Subtitles> _showSubtitles = new ObservableCollection<Subtitles>();
         #endregion
 
         #region Constuctor
@@ -45,11 +46,19 @@ namespace MPDN_RemoteControl
         }
         #endregion
 
+        #region Properties
         public ObservableCollection<Chapter> ShowChapters
         {
             get { return showChapters;}
             set { showChapters = value; }
-        } 
+        }
+
+        public ObservableCollection<Subtitles> ShowSubtitles
+        {
+            get { return _showSubtitles; }
+            set { _showSubtitles = value; }
+        }
+        #endregion
 
         /// <summary>
         /// Set the state of the Connect Button
@@ -322,11 +331,53 @@ namespace MPDN_RemoteControl
                     case "Chapters":
                         DisplayChapters(cmd[1]);
                         break;
+                    case "Subtitles":
+                        DisplaySubtitles(cmd[1]);
+                        break;
                 }
             }
             else
             {
                 //Invalid command
+            }
+        }
+
+        private void DisplaySubtitles(string subs)
+        {
+            try
+            {
+                Dispatcher.Invoke(() => _showSubtitles.Clear());
+                var subStrings = Regex.Split(subs, "]]");
+                foreach(var sub in subStrings)
+                {
+                    var splitData = Regex.Split(sub, ">>");
+
+                    int subNumber = -1;
+                    int.TryParse(splitData[0], out subNumber);
+                    bool isActive = false;
+                    Boolean.TryParse(splitData[3], out isActive);
+                    if(subNumber > 0)
+                    {
+                        Subtitles tmpSub = new Subtitles() { SubtitleDesc = splitData[1], SubtitleType = splitData[2], ActiveSub = isActive };
+                        Dispatcher.Invoke(() => _showSubtitles.Add(tmpSub));
+                    }
+                }
+                Dispatcher.Invoke(() =>
+                    {
+                        if (_showSubtitles.Count > 0)
+                        {
+                            cbSubtitles.IsEnabled = true;
+                            cbSubtitles.SelectionChanged -= cbSubtitles_SelectionChanged;
+                            cbSubtitles.SelectedItem = _showSubtitles.FirstOrDefault(t => t.ActiveSub);
+                            cbSubtitles.SelectionChanged += cbSubtitles_SelectionChanged;
+                        }
+                        else
+                            cbSubtitles.IsEnabled = false;
+                    });
+            }
+            catch(Exception)
+            {
+                throw;
             }
         }
 
@@ -484,6 +535,8 @@ namespace MPDN_RemoteControl
             LblStatus.Content = "Status: Not Connected";
             showChapters.Clear();
             cbChapters.IsEnabled = false;
+            cbSubtitles.IsEnabled = false;
+            SldrVolume.IsEnabled = false;
         }
 
         private void btnFullscreen_Click(object sender, RoutedEventArgs e)
@@ -507,6 +560,13 @@ namespace MPDN_RemoteControl
             var item = cbChapters.SelectedItem as Chapter;
             if(item != null)
                 PassCommandToServer("Seek|" + item.ChapterLocation);
+        }
+
+        private void cbSubtitles_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        {
+            var sub = cbSubtitles.SelectedItem as Subtitles;
+
+            PassCommandToServer("ActiveSubTrack|" + sub.SubtitleDesc);
         }
     }
 }
