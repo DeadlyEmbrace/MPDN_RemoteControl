@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Diagnostics.Eventing.Reader;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Timers;
@@ -45,6 +47,7 @@ namespace MPDN_RemoteControl
             InitializeComponent();
             this.DataContext = this;
             _clientAuthGuid = _guidManager.GetGuid;
+            LoadVersionNumber();
         }
         #endregion
 
@@ -68,6 +71,14 @@ namespace MPDN_RemoteControl
         }
 
         #endregion
+
+        private void LoadVersionNumber()
+        {
+            Assembly assembly = Assembly.GetExecutingAssembly();
+            FileVersionInfo fvi = FileVersionInfo.GetVersionInfo(assembly.Location);
+            string version = "v" + fvi.FileMajorPart + "." + fvi.FileMinorPart + "." + fvi.FileBuildPart;
+            LblVersion.Content = version;
+        }
 
         /// <summary>
         /// Set the state of the Connect Button
