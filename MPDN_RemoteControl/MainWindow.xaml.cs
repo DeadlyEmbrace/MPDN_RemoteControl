@@ -9,6 +9,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Timers;
@@ -106,6 +107,7 @@ namespace MPDN_RemoteControl
                     {
                         SldrSpan.IsEnabled = isEnabled;
                         BtnBrowse.IsEnabled = isEnabled;
+                        BtnAddToPlaylist.IsEnabled = isEnabled;
                         BtnPlayPause.IsEnabled = isEnabled;
                         BtnStop.IsEnabled = isEnabled;
                         BtnFullscreen.IsEnabled = isEnabled;
@@ -168,6 +170,7 @@ namespace MPDN_RemoteControl
                 Dispatcher.Invoke(() =>
                 {
                     BtnBrowse.IsEnabled = true;
+                    BtnAddToPlaylist.IsEnabled = true;
                     BtnDisconnect.IsEnabled = true;
                 });
                 while (true)
@@ -710,6 +713,27 @@ namespace MPDN_RemoteControl
         private void cbAudio_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
         {
 
+        }
+
+        private void BtnAddToPlaylist_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFile = new OpenFileDialog();
+            openFile.Multiselect = true;
+            openFile.Title = "Select File(s) to Play";
+            if ((bool)openFile.ShowDialog())
+            {
+                var files = openFile.FileNames;
+                StringBuilder sb = new StringBuilder();
+                int counter = 1;
+                foreach (var file in files)
+                {
+                    if (counter > 1)
+                        sb.Append(">>");
+                    sb.Append(file);
+                    counter++;
+                }
+                PassCommandToServer("AddFilesToPlaylist|" + sb);
+            }
         }
     }
 }

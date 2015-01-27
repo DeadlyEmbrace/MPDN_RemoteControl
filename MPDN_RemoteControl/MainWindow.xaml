@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d"
-        Title="RemoteControl" Height="349" Width="462" Closing="Window_Closing">
+        Title="RemoteControl" Height="396" Width="462" Closing="Window_Closing">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="100*"/>
@@ -11,10 +11,10 @@
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="42"/>
-            <RowDefinition Height="99*"/>
-            <RowDefinition Height="85*"/>
+            <RowDefinition Height="98"/>
+            <RowDefinition Height="85"/>
             <RowDefinition Height="24"/>
-            <RowDefinition Height="44"/>
+            <RowDefinition/>
             <RowDefinition Height="25"/>
         </Grid.RowDefinitions>
         <Button x:Name="BtnConnect" Content="Conntect To MPDN" HorizontalAlignment="Left" VerticalAlignment="Top" Width="127" Margin="114,10,0,0" Click="Button_Click" Height="26" Grid.Column="1"/>
@@ -44,6 +44,7 @@
         <Label Content="Audio" HorizontalAlignment="Left" Margin="10,49,0,0" Grid.Row="2" VerticalAlignment="Top" Padding="0"/>
         <ComboBox ItemsSource="{Binding Path=ShowAudioTracks}" SelectedValue="Description" DisplayMemberPath="Description" x:Name="cbAudio" HorizontalAlignment="Left" Margin="62,45,0,0" Grid.Row="2" VerticalAlignment="Top" Width="153" Grid.ColumnSpan="2" SelectionChanged="cbAudio_SelectionChanged"/>
         <Label x:Name="LblVersion" Content="Vx.x.x" HorizontalAlignment="Left" Margin="10,0,0,0" Grid.Row="5" VerticalAlignment="Top"/>
+        <Button x:Name="BtnAddToPlaylist" Content="Browse and add to playlist" HorizontalAlignment="Left" Margin="10,39,0,0" Grid.Row="4" VerticalAlignment="Top" Width="183" Grid.ColumnSpan="2" Click="BtnAddToPlaylist_Click"/>
 
     </Grid>
 </Window>
