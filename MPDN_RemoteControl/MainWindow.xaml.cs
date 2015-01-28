@@ -735,5 +735,19 @@ namespace MPDN_RemoteControl
                 PassCommandToServer("AddFilesToPlaylist|" + sb);
             }
         }
+
+        private void BtnSeek_Click(object sender, RoutedEventArgs e)
+        {
+            var seekText = TxbSeekTime.Text;
+            if (!String.IsNullOrEmpty(seekText))
+            {
+                double seekDur = -1;
+                Double.TryParse(seekText, out seekDur);
+                if (seekDur >= 0)
+                {
+                    PassCommandToServer("Seek|" + seekDur);
+                }
+            }
+        }
     }
 }
