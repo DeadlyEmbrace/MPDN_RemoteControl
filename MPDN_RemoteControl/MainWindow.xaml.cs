@@ -112,6 +112,7 @@ namespace MPDN_RemoteControl
                         BtnStop.IsEnabled = isEnabled;
                         BtnFullscreen.IsEnabled = isEnabled;
                         BtnMute.IsEnabled = isEnabled;
+                        SldrVolume.IsEnabled = isEnabled;
                     }
                 });
         }
@@ -172,6 +173,7 @@ namespace MPDN_RemoteControl
                     BtnBrowse.IsEnabled = true;
                     BtnAddToPlaylist.IsEnabled = true;
                     BtnDisconnect.IsEnabled = true;
+                    SldrVolume.IsEnabled = true;
                 });
                 while (true)
                 {
