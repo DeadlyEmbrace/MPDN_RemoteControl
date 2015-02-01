@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Diagnostics.Eventing.Reader;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -12,8 +10,8 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Timers;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using Microsoft.Win32;
 
@@ -164,7 +162,7 @@ namespace MPDN_RemoteControl
                 StreamReader reader = new StreamReader(nStream);
                 _writer = new StreamWriter(nStream);
 
-                Dispatcher.Invoke(() => LblState.Content = "Auth Code:" + _clientAuthGuid.ToString());
+                //Dispatcher.Invoke(() => LblState.Content = "Auth Code:" + _clientAuthGuid.ToString());
                 PassCommandToServer(_clientAuthGuid.ToString());
 
 
@@ -216,9 +214,24 @@ namespace MPDN_RemoteControl
                     case "ClientGUID":
                         if (Guid.TryParse(cmd[1], out _myGuid))
                         {
-                            Dispatcher.Invoke(() => LblStatus.Content = "Status: Connected");
+                            Dispatcher.Invoke(() =>
+                            {
+                                LblStatus.Content = "Status: Connected";
+                                LblState.Content = "Connected";
+                            });
                             PassCommandToServer("GetCurrentState|" + _myGuid.ToString());
                         }
+                        break;
+                    case "AuthCode":
+                        Guid.TryParse(cmd[1], out _myGuid);
+                        break;
+                    case "Connected":
+                        Dispatcher.Invoke(() =>
+                        {
+                            LblStatus.Content = "Status: Connected";
+                            LblState.Content = "Connected";
+                        });
+                        PassCommandToServer("GetCurrentState|" + _myGuid);
                         break;
                     case "Playing":
                         Dispatcher.Invoke(() =>
@@ -260,7 +273,7 @@ namespace MPDN_RemoteControl
                         Dispatcher.Invoke(() =>
                             {
                                 LblFile.Content = "None";
-                                LblState.Content = "Disconnected";
+                                //LblState.Content = "Disconnected";
                                 _playState = "Disconnected";
                                 BtnPlayPause.Content = "Play";
                                 _currentFile = String.Empty;
@@ -271,7 +284,7 @@ namespace MPDN_RemoteControl
                             {
                                 _currentFile = String.Empty;
                                 LblFile.Content = "None";
-                                LblState.Content = "Disconnected";
+                                //LblState.Content = "Disconnected";
                                 _playState = "Disconnected";
                                 BtnPlayPause.Content = "Play";
                                 CloseConnection();
@@ -698,21 +711,21 @@ namespace MPDN_RemoteControl
                 PassCommandToServer("Mute|False");
         }
 
-        private void cbChapters_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        private void cbChapters_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             var item = cbChapters.SelectedItem as Chapter;
             if(item != null)
                 PassCommandToServer("Seek|" + item.ChapterLocation);
         }
 
-        private void cbSubtitles_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        private void cbSubtitles_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             var sub = cbSubtitles.SelectedItem as Subtitles;
             if(sub != null)
                 PassCommandToServer("ActiveSubTrack|" + sub.SubtitleDesc);
         }
 
-        private void cbAudio_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        private void cbAudio_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
 
         }

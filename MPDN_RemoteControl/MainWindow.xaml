@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d"
-        Title="RemoteControl" Height="382" Width="462" Closing="Window_Closing">
+        Title="RemoteControl" Height="401.534" Width="462" Closing="Window_Closing">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="100*"/>
@@ -11,9 +11,9 @@
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="42"/>
-            <RowDefinition Height="104"/>
-            <RowDefinition Height="79"/>
-            <RowDefinition Height="31"/>
+            <RowDefinition Height="112"/>
+            <RowDefinition Height="85"/>
+            <RowDefinition Height="32"/>
             <RowDefinition/>
             <RowDefinition Height="25"/>
         </Grid.RowDefinitions>
@@ -30,13 +30,13 @@
         <Button x:Name="BtnStop" Content="Stop" Grid.Column="1" HorizontalAlignment="Left" Margin="98,13,0,0" Grid.Row="4" VerticalAlignment="Top" Width="75" Click="btnStop_Click" IsEnabled="False" Height="21"/>
         <Label Content="Position:" Margin="10,53,10,0" Grid.Row="1" VerticalAlignment="Top" Padding="0" Height="16"/>
         <Label x:Name="LblPosition" Content="00:00:00" Grid.Column="1" Margin="0,53,10,0" Grid.Row="1" VerticalAlignment="Top" Padding="0" Height="16"/>
-        <Slider x:Name="SldrSpan" Margin="10,74,10,0" Grid.Row="1" VerticalAlignment="Top" Grid.ColumnSpan="2" Grid.Column="0" ValueChanged="sldrSpan_ValueChanged" PreviewMouseLeftButtonDown="sldrSpan_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="sldrSpan_PreviewMouseLeftButtonUp" IsEnabled="False" Height="18"/>
+        <Slider x:Name="SldrSpan" Margin="10,74,10,0" Grid.Row="1" VerticalAlignment="Top" Grid.ColumnSpan="2" Grid.Column="0" ValueChanged="sldrSpan_ValueChanged" PreviewMouseLeftButtonDown="sldrSpan_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="sldrSpan_PreviewMouseLeftButtonUp" IsEnabled="False" Height="23"/>
         <Button x:Name="BtnDisconnect" Content="Disconnect" Grid.Column="1" HorizontalAlignment="Left" Margin="246,10,0,0" VerticalAlignment="Top" Width="97" IsEnabled="False" Height="26" Click="btnDisconnect_Click"/>
         <Button x:Name="BtnFullscreen" Content="Go FullScreen" Grid.Column="1" HorizontalAlignment="Left" Margin="178,13,0,0" Grid.Row="4" VerticalAlignment="Top" Width="86" IsEnabled="False" Click="btnFullscreen_Click" Height="21"/>
         <Button x:Name="BtnMute" Content="Mute" Grid.Column="1" Margin="269,13,0,0" Grid.Row="4" VerticalAlignment="Top" Height="21" HorizontalAlignment="Left" Width="75" IsEnabled="False" Click="BtnMute_Click"/>
         <Label Content="Volume" HorizontalAlignment="Left" Grid.Row="3" VerticalAlignment="Top" Width="53" Padding="0" Height="16" RenderTransformOrigin="0.5,0.5" Grid.Column="1" Margin="48,4,0,0"/>
         <Slider x:Name="SldrVolume" Grid.Row="3" Margin="141,4,10,2" Maximum="100" Grid.Column="1" ValueChanged="sldrVolume_ValueChanged"/>
-        <Label x:Name="LblLevel" Content="0" Grid.Column="1" HorizontalAlignment="Left" Margin="108,4,0,4" Grid.Row="3" Padding="0" Width="6"/>
+        <Label x:Name="LblLevel" Content="0" Grid.Column="1" HorizontalAlignment="Left" Margin="108,4,0,4" Grid.Row="3" Padding="0" Width="28"/>
         <ComboBox ItemsSource="{Binding Path=(ShowChapters)}" SelectedValuePath="ChapterIndex" DisplayMemberPath="ChapterName" x:Name="cbChapters" HorizontalAlignment="Left" Margin="62,10,0,0" Grid.Row="2" VerticalAlignment="Top" Width="153" SelectionChanged="cbChapters_SelectionChanged" Grid.ColumnSpan="2" Height="22"/>
         <Label Content="Chapters" HorizontalAlignment="Left" Margin="10,13,0,0" Grid.Row="2" VerticalAlignment="Top" Padding="0" Height="16" Width="47"/>
         <Label Content="Subtitles" Grid.Column="1" HorizontalAlignment="Left" Margin="140,13,0,0" Grid.Row="2" VerticalAlignment="Top" Padding="0" Height="16" Width="46"/>
