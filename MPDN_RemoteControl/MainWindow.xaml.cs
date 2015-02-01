@@ -727,7 +727,9 @@ namespace MPDN_RemoteControl
 
         private void cbAudio_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-
+            var aud = cbAudio.SelectedItem as Audio;
+            if(aud != null)
+                PassCommandToServer("ActiveAudioTrack|" + aud.Description);
         }
 
         private void BtnAddToPlaylist_Click(object sender, RoutedEventArgs e)
