@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -12,6 +13,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using Microsoft.Win32;
 
@@ -172,6 +174,7 @@ namespace MPDN_RemoteControl
                     BtnAddToPlaylist.IsEnabled = true;
                     BtnDisconnect.IsEnabled = true;
                     SldrVolume.IsEnabled = true;
+                    BtnPlaylistShow.IsEnabled = true;
                 });
                 while (true)
                 {
@@ -267,12 +270,47 @@ namespace MPDN_RemoteControl
                     case "PlaylistShow":
                         PlaylistStateChanged(cmd[1]);
                         break;
+                    case "PlaylistContent":
+                        ShowPlaylistContent(cmd[1]);
+                        break;
                 }
             }
             else
             {
                 //Invalid command
             }
+        }
+
+        private void ShowPlaylistContent(string cmd)
+        {
+            List<KeyValuePair<string, bool>> playlistContent = new List<KeyValuePair<string, bool>>();
+            var items = Regex.Split(cmd, ">>");
+            foreach (var item in items)
+            {
+                var finalSplit = Regex.Split(item, "]]");
+                if (finalSplit.Count() == 2)
+                {
+                    KeyValuePair<string, bool> tmpItem = new KeyValuePair<string, bool>(finalSplit[0],
+                        bool.Parse(finalSplit[1]));
+                    playlistContent.Add(tmpItem);
+                }
+            }
+
+            Dispatcher.Invoke(() =>
+            {
+                if (playlistContent.Count > 1)
+                {
+                    BtnPrevious.IsEnabled = true;
+                    BtnNext.IsEnabled = true;
+                }
+                else
+                {
+                    BtnPrevious.IsEnabled = false;
+                    BtnNext.IsEnabled = false;
+                }
+
+                DataGridPlaylist.ItemsSource = playlistContent;
+            });
         }
 
         private void PlaylistStateChanged(string cmd)
@@ -852,6 +890,20 @@ namespace MPDN_RemoteControl
             else
             {
                 PassCommandToServer("HidePlaylist|");
+            }
+        }
+
+        private void DataGridPlaylist_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            var itemIndex = DataGridPlaylist.SelectedIndex;
+            PassCommandToServer("PlaySelectedFile|" + itemIndex);
+        }
+
+        private void DataGridPlaylist_KeyUp(object sender, KeyEventArgs e)
+        {
+            if(e.Key == Key.Delete && DataGridPlaylist.SelectedIndex != -1)
+            {
+                PassCommandToServer("RemoveFile|" + DataGridPlaylist.SelectedIndex);
             }
         }
     }
