@@ -264,12 +264,33 @@ namespace MPDN_RemoteControl
                         break;
                     case "AudioChanged":
                         break;
+                    case "PlaylistShow":
+                        PlaylistStateChanged(cmd[1]);
+                        break;
                 }
             }
             else
             {
                 //Invalid command
             }
+        }
+
+        private void PlaylistStateChanged(string cmd)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                if (cmd == "True")
+                {
+                    Dispatcher.Invoke(() =>
+                    {
+                        BtnPlaylistShow.Content = "Hide";
+                    });
+                }
+                else
+                {
+                    BtnPlaylistShow.Content = "Show";
+                }
+            });
         }
 
         private void HandleClientGuid(string command)
@@ -685,7 +706,7 @@ namespace MPDN_RemoteControl
 
         private void btnPlayPause_Click(object sender, RoutedEventArgs e)
         {
-            if(_playState == "Stopped" || _playState == "Paused")
+            if(_playState == "Stopped" || _playState == "Paused" || _playState == "Disconnected")
             {
                 PassCommandToServer("Play|False");
             }
@@ -810,6 +831,27 @@ namespace MPDN_RemoteControl
                     counter++;
                 }
                 PassCommandToServer("AddFilesToPlaylist|" + sb);
+                BtnPlayPause.IsEnabled = true;
+            }
+        }
+
+        private void BtnPrevious_Click(object sender, RoutedEventArgs e)
+        {
+            PassCommandToServer("PlayPrevious|"); 
+        }
+
+        private void BtnNext_Click(object sender, RoutedEventArgs e)
+        {
+            PassCommandToServer("PlayNext|");
+        }
+
+        private void Button_Click_1(object sender, RoutedEventArgs e)
+        {
+            if(BtnPlaylistShow.Content.ToString() == "Show")
+                PassCommandToServer("ShowPlaylist|");
+            else
+            {
+                PassCommandToServer("HidePlaylist|");
             }
         }
     }
