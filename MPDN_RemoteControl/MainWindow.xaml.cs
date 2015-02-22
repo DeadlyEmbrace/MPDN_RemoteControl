@@ -611,18 +611,26 @@ namespace MPDN_RemoteControl
             {
                 Dispatcher.Invoke(() => _showSubtitles.Clear());
                 var subStrings = Regex.Split(subs, "]]");
-                foreach(var sub in subStrings)
+                if (subStrings.Count() > 1)
                 {
-                    var splitData = Regex.Split(sub, ">>");
-
-                    int subNumber = -1;
-                    int.TryParse(splitData[0], out subNumber);
-                    bool isActive = false;
-                    Boolean.TryParse(splitData[3], out isActive);
-                    if(subNumber > 0)
+                    foreach (var sub in subStrings)
                     {
-                        Subtitles tmpSub = new Subtitles() { SubtitleDesc = splitData[1], SubtitleType = splitData[2], ActiveSub = isActive };
-                        Dispatcher.Invoke(() => _showSubtitles.Add(tmpSub));
+                        var splitData = Regex.Split(sub, ">>");
+
+                        int subNumber = -1;
+                        int.TryParse(splitData[0], out subNumber);
+                        bool isActive = false;
+                        Boolean.TryParse(splitData[3], out isActive);
+                        if (subNumber > 0)
+                        {
+                            Subtitles tmpSub = new Subtitles()
+                            {
+                                SubtitleDesc = splitData[1],
+                                SubtitleType = splitData[2],
+                                ActiveSub = isActive
+                            };
+                            Dispatcher.Invoke(() => _showSubtitles.Add(tmpSub));
+                        }
                     }
                 }
                 UpdateSubControl();
