@@ -15,6 +15,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Input;
+using GongSolutions.Wpf.DragDrop;
 using Microsoft.Win32;
 
 namespace MPDN_RemoteControl
@@ -22,7 +23,7 @@ namespace MPDN_RemoteControl
     /// <summary>
     /// Interaction logic for RemoteControl.xaml
     /// </summary>
-    public partial class RemoteControl : Window
+    public partial class RemoteControl : Window, IDropTarget
     {
         #region Variables
         private Socket _server;
@@ -39,7 +40,8 @@ namespace MPDN_RemoteControl
         private readonly ClientGuid _guidManager = new ClientGuid();
         private ObservableCollection<Chapter> _showChapters = new ObservableCollection<Chapter>();
         private ObservableCollection<Subtitles> _showSubtitles = new ObservableCollection<Subtitles>();
-        private ObservableCollection<Audio> _audioTracks = new ObservableCollection<Audio>(); 
+        private ObservableCollection<Audio> _audioTracks = new ObservableCollection<Audio>();
+        ObservableCollection<KeyValuePair<string, bool>> playlistContent = new ObservableCollection<KeyValuePair<string, bool>>();
         #endregion
 
         #region Constuctor
@@ -283,16 +285,16 @@ namespace MPDN_RemoteControl
 
         private void ShowPlaylistContent(string cmd)
         {
-            List<KeyValuePair<string, bool>> playlistContent = new List<KeyValuePair<string, bool>>();
             var items = Regex.Split(cmd, ">>");
+            Dispatcher.Invoke(() => playlistContent.Clear());
             foreach (var item in items)
             {
                 var finalSplit = Regex.Split(item, "]]");
                 if (finalSplit.Count() == 2)
                 {
                     KeyValuePair<string, bool> tmpItem = new KeyValuePair<string, bool>(finalSplit[0],
-                        bool.Parse(finalSplit[1]));
-                    playlistContent.Add(tmpItem);
+                    bool.Parse(finalSplit[1]));
+                    Dispatcher.Invoke(() => playlistContent.Add(tmpItem));
                 }
             }
 
@@ -820,6 +822,13 @@ namespace MPDN_RemoteControl
             LblPosition.Content = "00:00:00";
             LblFile.Content = "None";
             LblState.Content = "Not Connected";
+            playlistContent.Clear();
+
+            BtnBrowse.IsEnabled = false;
+            BtnAddToPlaylist.IsEnabled = false;
+            BtnPrevious.IsEnabled = false;
+            BtnNext.IsEnabled = false;
+            BtnPlaylistShow.IsEnabled = false;
         }
 
         private void btnFullscreen_Click(object sender, RoutedEventArgs e)
@@ -913,6 +922,50 @@ namespace MPDN_RemoteControl
             {
                 PassCommandToServer("RemoveFile|" + DataGridPlaylist.SelectedIndex);
             }
+        }
+
+        public new void DragOver(IDropInfo dropInfo)
+        {
+            if (dropInfo.Data != null && dropInfo.TargetItem != null)
+            {
+                var sourceItem = (KeyValuePair<string, bool>) dropInfo.Data;
+                var targetItem = (KeyValuePair<string, bool>) dropInfo.TargetItem;
+
+                if (sourceItem.Key != targetItem.Key)
+                {
+                    dropInfo.DropTargetAdorner = DropTargetAdorners.Insert;
+                    dropInfo.Effects = DragDropEffects.Move;
+                }
+            }
+        }
+
+        public new void Drop(IDropInfo dropInfo)
+        {
+            if (dropInfo.Data != null && dropInfo.TargetItem != null)
+            {
+                var sourceItem = (KeyValuePair<string, bool>) dropInfo.Data;
+                var targetItem = (KeyValuePair<string, bool>) dropInfo.TargetItem;
+
+                //playlistContent.Remove(sourceItem);
+
+                var idx = playlistContent.IndexOf(sourceItem);
+                playlistContent.RemoveAt(idx);
+                PassCommandToServer("RemoveFile|" + idx);
+                var insertIdx = dropInfo.InsertIndex;
+                if (dropInfo.InsertPosition == RelativeInsertPosition.AfterTargetItem)
+                    insertIdx--;
+                if (insertIdx > playlistContent.Count)
+                    insertIdx = playlistContent.Count - 1;
+                playlistContent.Insert(insertIdx, sourceItem);
+
+                PassCommandToServer("InsertFileInPlaylist|" + insertIdx + "|" + sourceItem.Key);
+            }
+        }
+
+        private void BtnAbout_Click(object sender, RoutedEventArgs e)
+        {
+            AboutWindow myAbout = new AboutWindow();
+            myAbout.ShowDialog();
         }
     }
 }
