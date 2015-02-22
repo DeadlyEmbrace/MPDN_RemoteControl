@@ -3,17 +3,19 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Diagnostics.Eventing.Reader;
 using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Timers;
 using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
+using GongSolutions.Wpf.DragDrop;
 using Microsoft.Win32;
 
 namespace MPDN_RemoteControl
@@ -21,7 +23,7 @@ namespace MPDN_RemoteControl
     /// <summary>
     /// Interaction logic for RemoteControl.xaml
     /// </summary>
-    public partial class RemoteControl : Window
+    public partial class RemoteControl : Window, IDropTarget
     {
         #region Variables
         private Socket _server;
@@ -38,7 +40,8 @@ namespace MPDN_RemoteControl
         private readonly ClientGuid _guidManager = new ClientGuid();
         private ObservableCollection<Chapter> _showChapters = new ObservableCollection<Chapter>();
         private ObservableCollection<Subtitles> _showSubtitles = new ObservableCollection<Subtitles>();
-        private ObservableCollection<Audio> _audioTracks = new ObservableCollection<Audio>(); 
+        private ObservableCollection<Audio> _audioTracks = new ObservableCollection<Audio>();
+        ObservableCollection<KeyValuePair<string, bool>> playlistContent = new ObservableCollection<KeyValuePair<string, bool>>();
         #endregion
 
         #region Constuctor
@@ -106,10 +109,12 @@ namespace MPDN_RemoteControl
                     {
                         SldrSpan.IsEnabled = isEnabled;
                         BtnBrowse.IsEnabled = isEnabled;
+                        BtnAddToPlaylist.IsEnabled = isEnabled;
                         BtnPlayPause.IsEnabled = isEnabled;
                         BtnStop.IsEnabled = isEnabled;
                         BtnFullscreen.IsEnabled = isEnabled;
                         BtnMute.IsEnabled = isEnabled;
+                        SldrVolume.IsEnabled = isEnabled;
                     }
                 });
         }
@@ -161,14 +166,17 @@ namespace MPDN_RemoteControl
                 StreamReader reader = new StreamReader(nStream);
                 _writer = new StreamWriter(nStream);
 
-                Dispatcher.Invoke(() => LblState.Content = "Auth Code:" + _clientAuthGuid.ToString());
+                //Dispatcher.Invoke(() => LblState.Content = "Auth Code:" + _clientAuthGuid.ToString());
                 PassCommandToServer(_clientAuthGuid.ToString());
 
 
                 Dispatcher.Invoke(() =>
                 {
                     BtnBrowse.IsEnabled = true;
+                    BtnAddToPlaylist.IsEnabled = true;
                     BtnDisconnect.IsEnabled = true;
+                    SldrVolume.IsEnabled = true;
+                    BtnPlaylistShow.IsEnabled = true;
                 });
                 while (true)
                 {
@@ -209,148 +217,43 @@ namespace MPDN_RemoteControl
                         ForcedDisconnect();
                         break;
                     case "ClientGUID":
-                        if (Guid.TryParse(cmd[1], out _myGuid))
-                        {
-                            Dispatcher.Invoke(() => LblStatus.Content = "Status: Connected");
-                            PassCommandToServer("GetCurrentState|" + _myGuid.ToString());
-                        }
+                        HandleClientGuid(cmd[1]);
+                        break;
+                    case "AuthCode":
+                        Guid.TryParse(cmd[1], out _myGuid);
+                        break;
+                    case "Connected":
+                        HandleConnected(cmd[1]);
                         break;
                     case "Playing":
-                        Dispatcher.Invoke(() =>
-                        {
-                            _currentFile = cmd[1];
-                            LblFile.Content = cmd[1];
-                            LblState.Content = "Playing";
-                            _playState = "Playing";
-                            BtnPlayPause.Content = "Pause";
-                            BtnPlayPause.IsEnabled = true;
-                            SldrSpan.IsEnabled = true;
-                            BtnStop.IsEnabled = true;
-                            BtnFullscreen.IsEnabled = true;
-                            BtnMute.IsEnabled = true;
-                        });
-                        PassCommandToServer("GetDuration|" + _myGuid.ToString());
+                        HandlePlay(cmd[1]);
                         break;
                     case "Paused":
-                        Dispatcher.Invoke(() =>
-                        {
-                            LblFile.Content = cmd[1];
-                            LblState.Content = "Paused";
-                            _playState = "Paused";
-                            BtnPlayPause.Content = "Play";
-                            SetPlaybackButtonState(true);
-                        });
+                        HandlePaused(cmd[1]);
                         break;
                     case "Stopped":
-                        Dispatcher.Invoke(() =>
-                        {
-                            LblFile.Content = cmd[1];
-                            LblState.Content = "Stopped";
-                            _playState = "Stopped";
-                            BtnPlayPause.Content = "Play";
-                            BtnStop.IsEnabled = false;
-                        });
+                        HandleStopped(cmd[1]);
                         break;
                     case "Closed":
-                        Dispatcher.Invoke(() =>
-                            {
-                                LblFile.Content = "None";
-                                LblState.Content = "Disconnected";
-                                _playState = "Disconnected";
-                                BtnPlayPause.Content = "Play";
-                                _currentFile = String.Empty;
-                            });
+                        HandleClosed(cmd[1]);
                         break;
                     case "Closing":
-                        Dispatcher.Invoke(() =>
-                            {
-                                _currentFile = String.Empty;
-                                LblFile.Content = "None";
-                                LblState.Content = "Disconnected";
-                                _playState = "Disconnected";
-                                BtnPlayPause.Content = "Play";
-                                CloseConnection();
-                            });
+                        HandleClosing(cmd[1]);
                         break;
                     case "Postion":
-                        try
-                        {
-                            Dispatcher.Invoke(() =>
-                                {
-
-                                    _currenLocation = 0;
-                                    long.TryParse(cmd[1], out _currenLocation);
-                                    var span = TimeSpan.FromTicks(_currenLocation * 10);
-                                    var currChapter = _showChapters.FirstOrDefault(t => t.ChapterLocation >= _currenLocation);
-                                    if (currChapter != null && cbChapters.SelectedIndex != currChapter.ChapterIndex)
-                                    {
-                                        cbChapters.SelectionChanged -= cbChapters_SelectionChanged;
-                                        cbChapters.SelectedIndex = (currChapter.ChapterIndex - 2);
-                                        cbChapters.SelectionChanged += cbChapters_SelectionChanged;
-                                    }
-
-                                    string strDuration = span.Hours.ToString("00") + ":" + span.Minutes.ToString("00") + ":" + span.Seconds.ToString("00") + "\\" + _duration;
-                                    SldrSpan.Value = span.TotalSeconds;
-                                    LblPosition.Content = strDuration;
-
-                                });
-                        }
-                        catch (Exception)
-                        {
-
-                        }
+                        HandlePosition(cmd[1]);
                         break;
                     case "FullLength":
-                        long fullDur = 0;
-                        long.TryParse(cmd[1], out fullDur);
-                        _duration = TimeSpan.FromMilliseconds(fullDur / 1000);
-                        Dispatcher.Invoke(() => SldrSpan.Maximum = _duration.TotalSeconds);
+                        HandleLength(cmd[1]);
                         break;
                     case "Fullscreen":
-                        Dispatcher.Invoke(() =>
-                            {
-                                bool fs = false;
-                                Boolean.TryParse(cmd[1].ToString(), out fs);
-                                _isFullscreen = fs;
-                                if(_isFullscreen)
-                                {
-                                    BtnFullscreen.Content = "Exit Fullscreen";
-                                }
-                                else
-                                {
-                                    BtnFullscreen.Content = "Go Fullscreen";
-                                }
-                            });
+                        HandleFullscreen(cmd[1]);
                         break;
                     case "Mute":
-                        Dispatcher.Invoke(() =>
-                        {
-                            bool muted = false;
-                            Boolean.TryParse(cmd[1], out muted);
-                            _muted = muted;
-                            if (muted)
-                            {
-                                BtnMute.Content = "Unmute";
-                            }
-                            else
-                            {
-                                BtnMute.Content = "Mute";
-                            }
-                        });
+                        HandleMute(cmd[1]);
                         break;
                     case "Volume":
-                        Dispatcher.Invoke(() =>
-                        {
-                            int vol = -1;
-                            int.TryParse(cmd[1], out vol);
-                            if (vol >= 0)
-                            {
-                                SldrVolume.ValueChanged -= sldrVolume_ValueChanged;
-                                SldrVolume.Value = vol;
-                                LblLevel.Content = vol;
-                                SldrVolume.ValueChanged += sldrVolume_ValueChanged;
-                            }
-                        });
+                        HandleVolume(cmd[1]);
                         break;
                     case "Chapters":
                         DisplayChapters(cmd[1]);
@@ -366,12 +269,248 @@ namespace MPDN_RemoteControl
                         break;
                     case "AudioChanged":
                         break;
+                    case "PlaylistShow":
+                        PlaylistStateChanged(cmd[1]);
+                        break;
+                    case "PlaylistContent":
+                        ShowPlaylistContent(cmd[1]);
+                        break;
                 }
             }
             else
             {
                 //Invalid command
             }
+        }
+
+        private void ShowPlaylistContent(string cmd)
+        {
+            var items = Regex.Split(cmd, ">>");
+            Dispatcher.Invoke(() => playlistContent.Clear());
+            foreach (var item in items)
+            {
+                var finalSplit = Regex.Split(item, "]]");
+                if (finalSplit.Count() == 2)
+                {
+                    KeyValuePair<string, bool> tmpItem = new KeyValuePair<string, bool>(finalSplit[0],
+                    bool.Parse(finalSplit[1]));
+                    Dispatcher.Invoke(() => playlistContent.Add(tmpItem));
+                }
+            }
+
+            Dispatcher.Invoke(() =>
+            {
+                if (playlistContent.Count > 1)
+                {
+                    BtnPrevious.IsEnabled = true;
+                    BtnNext.IsEnabled = true;
+                }
+                else
+                {
+                    BtnPrevious.IsEnabled = false;
+                    BtnNext.IsEnabled = false;
+                }
+
+                DataGridPlaylist.ItemsSource = playlistContent;
+            });
+        }
+
+        private void PlaylistStateChanged(string cmd)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                if (cmd == "True")
+                {
+                    Dispatcher.Invoke(() =>
+                    {
+                        BtnPlaylistShow.Content = "Hide";
+                    });
+                }
+                else
+                {
+                    BtnPlaylistShow.Content = "Show";
+                }
+            });
+        }
+
+        private void HandleClientGuid(string command)
+        {
+            if (Guid.TryParse(command, out _myGuid))
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    LblStatus.Content = "Status: Connected";
+                    LblState.Content = "Connected";
+                });
+                PassCommandToServer("GetCurrentState|" + _myGuid.ToString());
+            }
+        }
+
+        private void HandleConnected(string command)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                LblStatus.Content = "Status: Connected";
+                LblState.Content = "Connected";
+            });
+            PassCommandToServer("GetCurrentState|" + _myGuid);
+        }
+
+        private void HandlePlay(string command)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                _currentFile = command;
+                LblFile.Content = command;
+                LblState.Content = "Playing";
+                _playState = "Playing";
+                BtnPlayPause.Content = "Pause";
+                BtnPlayPause.IsEnabled = true;
+                SldrSpan.IsEnabled = true;
+                BtnStop.IsEnabled = true;
+                BtnFullscreen.IsEnabled = true;
+                BtnMute.IsEnabled = true;
+            });
+            PassCommandToServer("GetDuration|" + _myGuid);
+        }
+
+        private void HandlePaused(string command)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                LblFile.Content = command;
+                LblState.Content = "Paused";
+                _playState = "Paused";
+                BtnPlayPause.Content = "Play";
+                SetPlaybackButtonState(true);
+            });
+        }
+
+        private void HandleStopped(string command)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                LblFile.Content = command;
+                LblState.Content = "Stopped";
+                _playState = "Stopped";
+                BtnPlayPause.Content = "Play";
+                BtnStop.IsEnabled = false;
+            });
+        }
+
+        private void HandleClosed(string command)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                LblFile.Content = "None";
+                //LblState.Content = "Disconnected";
+                _playState = "Disconnected";
+                BtnPlayPause.Content = "Play";
+                _currentFile = String.Empty;
+            });
+        }
+
+        private void HandleClosing(string command)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                _currentFile = String.Empty;
+                LblFile.Content = "None";
+                //LblState.Content = "Disconnected";
+                _playState = "Disconnected";
+                BtnPlayPause.Content = "Play";
+                CloseConnection();
+            });
+        }
+
+        private void HandlePosition(string command)
+        {
+            try
+            {
+                Dispatcher.Invoke(() =>
+                {
+
+                    _currenLocation = 0;
+                    long.TryParse(command, out _currenLocation);
+                    var span = TimeSpan.FromTicks(_currenLocation * 10);
+                    var currChapter = _showChapters.FirstOrDefault(t => t.ChapterLocation >= _currenLocation);
+                    if (currChapter != null && cbChapters.SelectedIndex != currChapter.ChapterIndex)
+                    {
+                        cbChapters.SelectionChanged -= cbChapters_SelectionChanged;
+                        cbChapters.SelectedIndex = (currChapter.ChapterIndex - 2);
+                        cbChapters.SelectionChanged += cbChapters_SelectionChanged;
+                    }
+
+                    string strDuration = span.Hours.ToString("00") + ":" + span.Minutes.ToString("00") + ":" + span.Seconds.ToString("00") + "\\" + _duration;
+                    SldrSpan.Value = span.TotalSeconds;
+                    LblPosition.Content = strDuration;
+
+                });
+            }
+            catch (Exception)
+            {
+
+            }
+        }
+
+        private void HandleLength(string command)
+        {
+            long fullDur;
+            long.TryParse(command, out fullDur);
+            _duration = TimeSpan.FromMilliseconds(fullDur / 1000);
+            Dispatcher.Invoke(() => SldrSpan.Maximum = _duration.TotalSeconds);
+        }
+
+        private void HandleFullscreen(string command)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                bool fs = false;
+                Boolean.TryParse(command, out fs);
+                _isFullscreen = fs;
+                if (_isFullscreen)
+                {
+                    BtnFullscreen.Content = "Exit Fullscreen";
+                }
+                else
+                {
+                    BtnFullscreen.Content = "Go Fullscreen";
+                }
+            });
+        }
+
+        private void HandleMute(string command)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                bool muted = false;
+                Boolean.TryParse(command, out muted);
+                _muted = muted;
+                if (muted)
+                {
+                    BtnMute.Content = "Unmute";
+                }
+                else
+                {
+                    BtnMute.Content = "Mute";
+                }
+            });
+        }
+
+        private void HandleVolume(string command)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                int vol = -1;
+                int.TryParse(command, out vol);
+                if (vol >= 0)
+                {
+                    SldrVolume.ValueChanged -= sldrVolume_ValueChanged;
+                    SldrVolume.Value = vol;
+                    LblLevel.Content = vol;
+                    SldrVolume.ValueChanged += sldrVolume_ValueChanged;
+                }
+            });
         }
 
         private void DisplayAudioTracks(string audioTracks)
@@ -474,18 +613,26 @@ namespace MPDN_RemoteControl
             {
                 Dispatcher.Invoke(() => _showSubtitles.Clear());
                 var subStrings = Regex.Split(subs, "]]");
-                foreach(var sub in subStrings)
+                if (subStrings.Count() > 1)
                 {
-                    var splitData = Regex.Split(sub, ">>");
-
-                    int subNumber = -1;
-                    int.TryParse(splitData[0], out subNumber);
-                    bool isActive = false;
-                    Boolean.TryParse(splitData[3], out isActive);
-                    if(subNumber > 0)
+                    foreach (var sub in subStrings)
                     {
-                        Subtitles tmpSub = new Subtitles() { SubtitleDesc = splitData[1], SubtitleType = splitData[2], ActiveSub = isActive };
-                        Dispatcher.Invoke(() => _showSubtitles.Add(tmpSub));
+                        var splitData = Regex.Split(sub, ">>");
+
+                        int subNumber = -1;
+                        int.TryParse(splitData[0], out subNumber);
+                        bool isActive = false;
+                        Boolean.TryParse(splitData[3], out isActive);
+                        if (subNumber > 0)
+                        {
+                            Subtitles tmpSub = new Subtitles()
+                            {
+                                SubtitleDesc = splitData[1],
+                                SubtitleType = splitData[2],
+                                ActiveSub = isActive
+                            };
+                            Dispatcher.Invoke(() => _showSubtitles.Add(tmpSub));
+                        }
                     }
                 }
                 UpdateSubControl();
@@ -607,7 +754,7 @@ namespace MPDN_RemoteControl
 
         private void btnPlayPause_Click(object sender, RoutedEventArgs e)
         {
-            if(_playState == "Stopped" || _playState == "Paused")
+            if(_playState == "Stopped" || _playState == "Paused" || _playState == "Disconnected")
             {
                 PassCommandToServer("Play|False");
             }
@@ -675,6 +822,13 @@ namespace MPDN_RemoteControl
             LblPosition.Content = "00:00:00";
             LblFile.Content = "None";
             LblState.Content = "Not Connected";
+            playlistContent.Clear();
+
+            BtnBrowse.IsEnabled = false;
+            BtnAddToPlaylist.IsEnabled = false;
+            BtnPrevious.IsEnabled = false;
+            BtnNext.IsEnabled = false;
+            BtnPlaylistShow.IsEnabled = false;
         }
 
         private void btnFullscreen_Click(object sender, RoutedEventArgs e)
@@ -693,23 +847,125 @@ namespace MPDN_RemoteControl
                 PassCommandToServer("Mute|False");
         }
 
-        private void cbChapters_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        private void cbChapters_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             var item = cbChapters.SelectedItem as Chapter;
             if(item != null)
                 PassCommandToServer("Seek|" + item.ChapterLocation);
         }
 
-        private void cbSubtitles_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        private void cbSubtitles_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             var sub = cbSubtitles.SelectedItem as Subtitles;
             if(sub != null)
                 PassCommandToServer("ActiveSubTrack|" + sub.SubtitleDesc);
         }
 
-        private void cbAudio_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        private void cbAudio_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            var aud = cbAudio.SelectedItem as Audio;
+            if(aud != null)
+                PassCommandToServer("ActiveAudioTrack|" + aud.Description);
+        }
 
+        private void BtnAddToPlaylist_Click(object sender, RoutedEventArgs e)
+        {
+            OpenFileDialog openFile = new OpenFileDialog();
+            openFile.Multiselect = true;
+            openFile.Title = "Select File(s) to Play";
+            if ((bool)openFile.ShowDialog())
+            {
+                var files = openFile.FileNames;
+                StringBuilder sb = new StringBuilder();
+                int counter = 1;
+                foreach (var file in files)
+                {
+                    if (counter > 1)
+                        sb.Append(">>");
+                    sb.Append(file);
+                    counter++;
+                }
+                PassCommandToServer("AddFilesToPlaylist|" + sb);
+                BtnPlayPause.IsEnabled = true;
+            }
+        }
+
+        private void BtnPrevious_Click(object sender, RoutedEventArgs e)
+        {
+            PassCommandToServer("PlayPrevious|"); 
+        }
+
+        private void BtnNext_Click(object sender, RoutedEventArgs e)
+        {
+            PassCommandToServer("PlayNext|");
+        }
+
+        private void Button_Click_1(object sender, RoutedEventArgs e)
+        {
+            if(BtnPlaylistShow.Content.ToString() == "Show")
+                PassCommandToServer("ShowPlaylist|");
+            else
+            {
+                PassCommandToServer("HidePlaylist|");
+            }
+        }
+
+        private void DataGridPlaylist_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            var itemIndex = DataGridPlaylist.SelectedIndex;
+            PassCommandToServer("PlaySelectedFile|" + itemIndex);
+        }
+
+        private void DataGridPlaylist_KeyUp(object sender, KeyEventArgs e)
+        {
+            if(e.Key == Key.Delete && DataGridPlaylist.SelectedIndex != -1)
+            {
+                PassCommandToServer("RemoveFile|" + DataGridPlaylist.SelectedIndex);
+            }
+        }
+
+        public new void DragOver(IDropInfo dropInfo)
+        {
+            if (dropInfo.Data != null && dropInfo.TargetItem != null)
+            {
+                var sourceItem = (KeyValuePair<string, bool>) dropInfo.Data;
+                var targetItem = (KeyValuePair<string, bool>) dropInfo.TargetItem;
+
+                if (sourceItem.Key != targetItem.Key)
+                {
+                    dropInfo.DropTargetAdorner = DropTargetAdorners.Insert;
+                    dropInfo.Effects = DragDropEffects.Move;
+                }
+            }
+        }
+
+        public new void Drop(IDropInfo dropInfo)
+        {
+            if (dropInfo.Data != null && dropInfo.TargetItem != null)
+            {
+                var sourceItem = (KeyValuePair<string, bool>) dropInfo.Data;
+                var targetItem = (KeyValuePair<string, bool>) dropInfo.TargetItem;
+
+                //playlistContent.Remove(sourceItem);
+
+                var idx = playlistContent.IndexOf(sourceItem);
+                playlistContent.RemoveAt(idx);
+                PassCommandToServer("RemoveFile|" + idx);
+                var insertIdx = dropInfo.InsertIndex;
+                if (dropInfo.InsertPosition == RelativeInsertPosition.AfterTargetItem)
+                    insertIdx--;
+                if (insertIdx > playlistContent.Count)
+                    insertIdx = playlistContent.Count - 1;
+                playlistContent.Insert(insertIdx, sourceItem);
+
+                PassCommandToServer("InsertFileInPlaylist|" + insertIdx + "|" + sourceItem.Key);
+            }
+        }
+
+        private void BtnAbout_Click(object sender, RoutedEventArgs e)
+        {
+            AboutWindow myAbout = new AboutWindow();
+            myAbout.ShowDialog();
         }
     }
 }
