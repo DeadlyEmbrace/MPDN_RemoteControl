@@ -1,12 +1,19 @@
 ﻿<Window x:Class="MPDN_RemoteControl.AboutWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="About" Height="156" Width="300" WindowStartupLocation="CenterOwner" ResizeMode="NoResize" WindowStyle="ToolWindow">
+        Title="About" Height="164.593" Width="300" WindowStartupLocation="CenterOwner" ResizeMode="NoResize" WindowStyle="ToolWindow">
     <Grid>
-        <Label Content="MPDN RemoteControl Third Party Libraries" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" FontWeight="Bold"/>
-        <TextBlock HorizontalAlignment="Left" Margin="10,41,0,0" TextWrapping="Wrap" Text="- gong-wpf-dragdop" VerticalAlignment="Top"/>
-        <Button Content="License" Margin="207,41,12,0" VerticalAlignment="Top" Click="Button_Click"/>
-        <Button x:Name="BtnClose" Content="Close" Margin="207,0,12,10" VerticalAlignment="Bottom" Click="BtnClose_Click"/>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="62"/>
+            <RowDefinition Height="27"/>
+            <RowDefinition Height="39"/>
+        </Grid.RowDefinitions>
+        <Label Content="MPDN RemoteControl Third Party Libraries" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" FontWeight="Bold" Height="26" Width="254"/>
+        <TextBlock HorizontalAlignment="Left" Margin="10,41,0,0" TextWrapping="Wrap" Text="- gong-wpf-dragdop" VerticalAlignment="Top" Height="16" Width="111"/>
+        <Button Content="License" Margin="209,42,10,0" VerticalAlignment="Top" Click="Button_Click" Height="20"/>
+        <Button x:Name="BtnClose" Content="Close" Margin="209,9,10,0" Click="BtnClose_Click" Grid.Row="2" Height="20" VerticalAlignment="Top"/>
+        <Label Padding="0" Content="- Icons by Icons8" HorizontalAlignment="Left" Margin="10,10,0,0" Grid.Row="1" VerticalAlignment="Top" Height="16" Width="89"/>
+        <Button x:Name="BtnLink" ToolTip="https://icons8.com" Content="Link" Margin="209,8,10,0" Grid.Row="1" Click="BtnLink_Click" Height="19" VerticalAlignment="Top"/>
 
     </Grid>
 </Window>

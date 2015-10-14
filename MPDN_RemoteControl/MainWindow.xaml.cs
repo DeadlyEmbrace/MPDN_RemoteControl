@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
 using GongSolutions.Wpf.DragDrop;
 using Microsoft.Win32;
 using MPDN_RemoteControl.Controls;
@@ -319,12 +320,14 @@ namespace MPDN_RemoteControl
                 {
                     Dispatcher.Invoke(() =>
                     {
-                        BtnPlaylistShow.Content = "Hide";
+                        BtnPlaylistShow.ToolTip = "Hide";
+                        ImgShow.Source = new BitmapImage(new Uri("pack://application:,,,/MPDN_RemoteControl;component/Icons/Hide.png"));
                     });
                 }
                 else
                 {
-                    BtnPlaylistShow.Content = "Show";
+                    BtnPlaylistShow.ToolTip = "Show";
+                    ImgShow.Source = new BitmapImage(new Uri("pack://application:,,,/MPDN_RemoteControl;component/Icons/Show.png"));
                 }
             });
         }
@@ -338,7 +341,7 @@ namespace MPDN_RemoteControl
                     LblStatus.Content = "Status: Connected";
                     LblState.Content = "Connected";
                 });
-                PassCommandToServer("GetCurrentState|" + _myGuid.ToString());
+                PassCommandToServer("GetCurrentState|" + _myGuid);
             }
         }
 
@@ -360,7 +363,8 @@ namespace MPDN_RemoteControl
                 LblFile.Content = command;
                 LblState.Content = "Playing";
                 _playState = "Playing";
-                BtnPlayPause.Content = "Pause";
+                BtnPlayPause.ToolTip = "Pause";
+                ImgPlayPause.Source = new BitmapImage(new Uri("pack://application:,,,/MPDN_RemoteControl;component/Icons/Pause.png"));
                 BtnPlayPause.IsEnabled = true;
                 SldrSpan.IsEnabled = true;
                 BtnStop.IsEnabled = true;
@@ -377,7 +381,8 @@ namespace MPDN_RemoteControl
                 LblFile.Content = command;
                 LblState.Content = "Paused";
                 _playState = "Paused";
-                BtnPlayPause.Content = "Play";
+                BtnPlayPause.ToolTip = "Play";
+                ImgPlayPause.Source = new BitmapImage(new Uri("pack://application:,,,/MPDN_RemoteControl;component/Icons/Play.png"));
                 SetPlaybackButtonState(true);
             });
         }
@@ -389,7 +394,8 @@ namespace MPDN_RemoteControl
                 LblFile.Content = command;
                 LblState.Content = "Stopped";
                 _playState = "Stopped";
-                BtnPlayPause.Content = "Play";
+                BtnPlayPause.ToolTip = "Play";
+                ImgPlayPause.Source = new BitmapImage(new Uri("pack://application:,,,/MPDN_RemoteControl;component/Icons/Play.png"));
                 BtnStop.IsEnabled = false;
             });
         }
@@ -401,8 +407,9 @@ namespace MPDN_RemoteControl
                 LblFile.Content = "None";
                 //LblState.Content = "Disconnected";
                 _playState = "Disconnected";
-                BtnPlayPause.Content = "Play";
-                _currentFile = String.Empty;
+                BtnPlayPause.ToolTip = "Play";
+                ImgPlayPause.Source = new BitmapImage(new Uri("pack://application:,,,/MPDN_RemoteControl;component/Icons/Play.png"));
+                _currentFile = string.Empty;
             });
         }
 
@@ -414,7 +421,8 @@ namespace MPDN_RemoteControl
                 LblFile.Content = "None";
                 //LblState.Content = "Disconnected";
                 _playState = "Disconnected";
-                BtnPlayPause.Content = "Play";
+                BtnPlayPause.ToolTip = "Play";
+                ImgPlayPause.Source = new BitmapImage(new Uri("pack://application:,,,/MPDN_RemoteControl;component/Icons/Play.png"));
                 CloseConnection();
             });
         }
@@ -430,11 +438,11 @@ namespace MPDN_RemoteControl
                     long.TryParse(command, out _currenLocation);
                     var span = TimeSpan.FromTicks(_currenLocation * 10);
                     var currChapter = ShowChapters.FirstOrDefault(t => t.ChapterLocation >= _currenLocation);
-                    if (currChapter != null && cbChapters.SelectedIndex != currChapter.ChapterIndex)
+                    if (currChapter != null && CbChapters.SelectedIndex != currChapter.ChapterIndex)
                     {
-                        cbChapters.SelectionChanged -= cbChapters_SelectionChanged;
-                        cbChapters.SelectedIndex = (currChapter.ChapterIndex - 2);
-                        cbChapters.SelectionChanged += cbChapters_SelectionChanged;
+                        CbChapters.SelectionChanged -= cbChapters_SelectionChanged;
+                        CbChapters.SelectedIndex = (currChapter.ChapterIndex - 2);
+                        CbChapters.SelectionChanged += cbChapters_SelectionChanged;
                     }
 
                     string strDuration = span.Hours.ToString("00") + ":" + span.Minutes.ToString("00") + ":" + span.Seconds.ToString("00") + "\\" + _duration;
@@ -461,16 +469,18 @@ namespace MPDN_RemoteControl
         {
             Dispatcher.Invoke(() =>
             {
-                bool fs = false;
-                Boolean.TryParse(command, out fs);
+                bool fs;
+                bool.TryParse(command, out fs);
                 _isFullscreen = fs;
                 if (_isFullscreen)
                 {
-                    BtnFullscreen.Content = "Exit Fullscreen";
+                    BtnFullscreen.ToolTip = "Exit Fullscreen";
+                    ImgFullscreen.Source = new BitmapImage(new Uri("pack://application:,,,/MPDN_RemoteControl;component/Icons/LeaveFullscreen.png"));
                 }
                 else
                 {
-                    BtnFullscreen.Content = "Go Fullscreen";
+                    BtnFullscreen.ToolTip = "Go Fullscreen";
+                    ImgFullscreen.Source = new BitmapImage(new Uri("pack://application:,,,/MPDN_RemoteControl;component/Icons/FullScreen.png"));
                 }
             });
         }
@@ -484,11 +494,13 @@ namespace MPDN_RemoteControl
                 _muted = muted;
                 if (muted)
                 {
-                    BtnMute.Content = "Unmute";
+                    BtnMute.ToolTip = "Unmute";
+                    ImgMute.Source = new BitmapImage(new Uri("pack://application:,,,/MPDN_RemoteControl;component/Icons/UnMute.png"));
                 }
                 else
                 {
-                    BtnMute.Content = "Mute";
+                    BtnMute.ToolTip = "Mute";
+                    ImgMute.Source = new BitmapImage(new Uri("pack://application:,,,/MPDN_RemoteControl;component/Icons/Mute.png"));
                 }
             });
         }
@@ -607,13 +619,13 @@ namespace MPDN_RemoteControl
             {
                 if (ShowAudioTracks.Count > 0)
                 {
-                    cbAudio.IsEnabled = true;
-                    cbAudio.SelectionChanged -= cbAudio_SelectionChanged;
-                    cbAudio.SelectedItem = ShowAudioTracks.FirstOrDefault(t => t.Active);
-                    cbAudio.SelectionChanged += cbAudio_SelectionChanged;
+                    CbAudio.IsEnabled = true;
+                    CbAudio.SelectionChanged -= cbAudio_SelectionChanged;
+                    CbAudio.SelectedItem = ShowAudioTracks.FirstOrDefault(t => t.Active);
+                    CbAudio.SelectionChanged += cbAudio_SelectionChanged;
                 }
                 else
-                    cbAudio.IsEnabled = false;
+                    CbAudio.IsEnabled = false;
 
             });
         }
@@ -655,13 +667,13 @@ namespace MPDN_RemoteControl
             {
                 if (ShowSubtitles.Count > 0)
                 {
-                    cbSubtitles.IsEnabled = true;
-                    cbSubtitles.SelectionChanged -= cbSubtitles_SelectionChanged;
-                    cbSubtitles.SelectedItem = ShowSubtitles.FirstOrDefault(t => t.ActiveSub);
-                    cbSubtitles.SelectionChanged += cbSubtitles_SelectionChanged;
+                    CbSubtitles.IsEnabled = true;
+                    CbSubtitles.SelectionChanged -= cbSubtitles_SelectionChanged;
+                    CbSubtitles.SelectedItem = ShowSubtitles.FirstOrDefault(t => t.ActiveSub);
+                    CbSubtitles.SelectionChanged += cbSubtitles_SelectionChanged;
                 }
                 else
-                    cbSubtitles.IsEnabled = false;
+                    CbSubtitles.IsEnabled = false;
             });
         }
 
@@ -725,16 +737,16 @@ namespace MPDN_RemoteControl
                     if (ShowChapters.Count > 0)
                     {
                         var currChapter = ShowChapters.FirstOrDefault(t => t.ChapterLocation >= _currenLocation);
-                        if (currChapter != null && cbChapters.SelectedIndex != currChapter.ChapterIndex)
+                        if (currChapter != null && CbChapters.SelectedIndex != currChapter.ChapterIndex)
                         {
-                            cbChapters.SelectionChanged -= cbChapters_SelectionChanged;
-                            cbChapters.SelectedIndex = (currChapter.ChapterIndex - 2);
-                            cbChapters.SelectionChanged += cbChapters_SelectionChanged;
+                            CbChapters.SelectionChanged -= cbChapters_SelectionChanged;
+                            CbChapters.SelectedIndex = (currChapter.ChapterIndex - 2);
+                            CbChapters.SelectionChanged += cbChapters_SelectionChanged;
                         }
-                        cbChapters.IsEnabled = true;
+                        CbChapters.IsEnabled = true;
                     }
                     else
-                        cbChapters.IsEnabled = false;
+                        CbChapters.IsEnabled = false;
                 });
 
             }
@@ -862,20 +874,20 @@ namespace MPDN_RemoteControl
             SetConnectButtonState(true);
             SetPlaybackButtonState(false);
             LblStatus.Content = "Status: Not Connected";
-            cbChapters.SelectionChanged -= cbChapters_SelectionChanged;
+            CbChapters.SelectionChanged -= cbChapters_SelectionChanged;
             ShowChapters.Clear();
-            cbChapters.SelectionChanged += cbChapters_SelectionChanged;
-            cbSubtitles.SelectionChanged -= cbSubtitles_SelectionChanged;
+            CbChapters.SelectionChanged += cbChapters_SelectionChanged;
+            CbSubtitles.SelectionChanged -= cbSubtitles_SelectionChanged;
             ShowSubtitles.Clear();
-            cbSubtitles.SelectionChanged -= cbSubtitles_SelectionChanged;
-            cbAudio.SelectionChanged -= cbAudio_SelectionChanged;
+            CbSubtitles.SelectionChanged -= cbSubtitles_SelectionChanged;
+            CbAudio.SelectionChanged -= cbAudio_SelectionChanged;
             ShowAudioTracks.Clear();
             ShowVideoTracks.Clear();
-            cbAudio.SelectionChanged += cbAudio_SelectionChanged;
-            cbChapters.IsEnabled = false;
-            cbSubtitles.IsEnabled = false;
+            CbAudio.SelectionChanged += cbAudio_SelectionChanged;
+            CbChapters.IsEnabled = false;
+            CbSubtitles.IsEnabled = false;
             SldrVolume.IsEnabled = false;
-            cbAudio.IsEnabled = false;
+            CbAudio.IsEnabled = false;
             CbVideo.IsEnabled = false;
             _duration = new TimeSpan(0,0,0,0);
             _currentFile = string.Empty;
@@ -911,21 +923,21 @@ namespace MPDN_RemoteControl
 
         private void cbChapters_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            var item = cbChapters.SelectedItem as Chapter;
+            var item = CbChapters.SelectedItem as Chapter;
             if(item != null)
                 PassCommandToServer("Seek|" + item.ChapterLocation);
         }
 
         private void cbSubtitles_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            var sub = cbSubtitles.SelectedItem as Subtitles;
+            var sub = CbSubtitles.SelectedItem as Subtitles;
             if(sub != null)
                 PassCommandToServer("ActiveSubTrack|" + sub.SubtitleDesc);
         }
 
         private void cbAudio_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            var aud = cbAudio.SelectedItem as Audio;
+            var aud = CbAudio.SelectedItem as Audio;
             if(aud != null)
                 PassCommandToServer("ActiveAudioTrack|" + aud.Description);
         }
@@ -981,7 +993,7 @@ namespace MPDN_RemoteControl
 
         private void Button_Click_1(object sender, RoutedEventArgs e)
         {
-            if(BtnPlaylistShow.Content.ToString() == "Show")
+            if(BtnPlaylistShow.ToolTip.ToString() == "Show")
                 PassCommandToServer("ShowPlaylist|");
             else
             {

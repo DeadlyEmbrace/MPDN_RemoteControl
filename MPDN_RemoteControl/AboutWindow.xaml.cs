@@ -35,5 +35,10 @@ namespace MPDN_RemoteControl
         {
             this.Close();
         }
+
+        private void BtnLink_Click(object sender, RoutedEventArgs e)
+        {
+            Process.Start("https://icons8.com");
+        }
     }
 }
