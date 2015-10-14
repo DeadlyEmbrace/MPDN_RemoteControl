@@ -5,6 +5,23 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d"
         xmlns:dragDrop="clr-namespace:GongSolutions.Wpf.DragDrop;assembly=GongSolutions.Wpf.DragDrop"
         Title="RemoteControl" Height="454.231" Width="864.62" Closing="Window_Closing" Icon="Icons/RemoteLogo.png">
+    <Window.Resources>
+        <LinearGradientBrush x:Key="BgBrush1" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Offset="0" Color="#FF1292EA"/>
+            <GradientStop Offset="1" Color="#FF229EF3"/>
+        </LinearGradientBrush>
+        <SolidColorBrush x:Key="ForegroundBrush" Color="White"></SolidColorBrush>
+
+        <Style x:Key="HighlightRow" TargetType="{x:Type DataGridRow}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Value}" Value="true">
+                    <Setter Property="Background" Value="{StaticResource BgBrush1}" />
+                    <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"></Setter>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+    
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="36"/>
@@ -107,7 +124,11 @@
         <Label x:Name="LblVersion" Content="Vx.x.x" HorizontalAlignment="Left" Margin="8,0,0,7" Grid.Row="5" VerticalAlignment="Bottom" Height="24" Width="66" Grid.ColumnSpan="2"
                Grid.Column="0" />
 
-        <DataGrid x:Name="DataGridPlaylist" Grid.Column="4" Margin="10" Grid.RowSpan="5" IsReadOnly="True" MouseDoubleClick="DataGridPlaylist_MouseDoubleClick" SelectionMode="Single" KeyUp="DataGridPlaylist_KeyUp" dragDrop:DragDrop.IsDragSource="True" dragDrop:DragDrop.IsDropTarget="True" dragDrop:DragDrop.DropHandler="{Binding}" Grid.Row="1" AutoGenerateColumns="True">
+        <DataGrid ItemsSource="{Binding Path=PlaylistContent}" RowStyle="{StaticResource HighlightRow}" x:Name="DataGridPlaylist" Grid.Column="4" Margin="10" Grid.RowSpan="5" IsReadOnly="True" MouseDoubleClick="DataGridPlaylist_MouseDoubleClick" SelectionMode="Single" KeyUp="DataGridPlaylist_KeyUp" dragDrop:DragDrop.IsDragSource="True" dragDrop:DragDrop.IsDropTarget="True" dragDrop:DragDrop.DropHandler="{Binding}" Grid.Row="1" AutoGenerateColumns="False">
+           <DataGrid.Columns>
+            <DataGridTextColumn Binding="{Binding Path=Key}" Header="File"></DataGridTextColumn>
+                <DataGridTextColumn Binding="{Binding Path=Value}"></DataGridTextColumn>
+            </DataGrid.Columns>
         </DataGrid>
 
         <Button x:Name="BtnAbout" ToolTip="About" Grid.Row="0" Grid.Column="4" Margin="0,10,10,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="32" Click="BtnAbout_Click" Height="32">

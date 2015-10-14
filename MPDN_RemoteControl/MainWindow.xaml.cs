@@ -40,7 +40,7 @@ namespace MPDN_RemoteControl
         private bool _isFullscreen = false;
         private bool _muted = false;
         private readonly ClientGuid _guidManager = new ClientGuid();
-        readonly ObservableCollection<KeyValuePair<string, bool>> _playlistContent = new ObservableCollection<KeyValuePair<string, bool>>();
+        //readonly ObservableCollection<KeyValuePair<string, bool>> _playlistContent = new ObservableCollection<KeyValuePair<string, bool>>();
         private readonly object _videoLock = new object();
 
         #endregion
@@ -48,8 +48,9 @@ namespace MPDN_RemoteControl
         #region Constuctor
         public RemoteControl()
         {
+            DataContext = this;
             InitializeComponent();
-            this.DataContext = this;
+
             _clientAuthGuid = _guidManager.GetGuid;
             LoadVersionNumber();
         }
@@ -60,6 +61,7 @@ namespace MPDN_RemoteControl
         public ObservableCollection<Subtitles> ShowSubtitles { get; set; } = new ObservableCollection<Subtitles>();
         public ObservableCollection<Audio> ShowAudioTracks { get; set; } = new ObservableCollection<Audio>();
         public ObservableCollection<Video> ShowVideoTracks { get; set; } = new ObservableCollection<Video>();
+        public ObservableCollection<KeyValuePair<string, bool>> PlaylistContent { get; set; } = new ObservableCollection<KeyValuePair<string, bool>>();
 
         #endregion
 
@@ -283,7 +285,7 @@ namespace MPDN_RemoteControl
         private void ShowPlaylistContent(string cmd)
         {
             var items = Regex.Split(cmd, ">>");
-            Dispatcher.Invoke(() => _playlistContent.Clear());
+            Dispatcher.Invoke(() => PlaylistContent.Clear());
             foreach (var item in items)
             {
                 var finalSplit = Regex.Split(item, "]]");
@@ -291,13 +293,13 @@ namespace MPDN_RemoteControl
                 {
                     KeyValuePair<string, bool> tmpItem = new KeyValuePair<string, bool>(finalSplit[0],
                     bool.Parse(finalSplit[1]));
-                    Dispatcher.Invoke(() => _playlistContent.Add(tmpItem));
+                    Dispatcher.Invoke(() => PlaylistContent.Add(tmpItem));
                 }
             }
 
             Dispatcher.Invoke(() =>
             {
-                if (_playlistContent.Count > 1)
+                if (PlaylistContent.Count > 1)
                 {
                     BtnPrevious.IsEnabled = true;
                     BtnNext.IsEnabled = true;
@@ -308,7 +310,7 @@ namespace MPDN_RemoteControl
                     BtnNext.IsEnabled = false;
                 }
 
-                DataGridPlaylist.ItemsSource = _playlistContent;
+                //DataGridPlaylist.ItemsSource = _playlistContent;
             });
         }
 
@@ -894,7 +896,7 @@ namespace MPDN_RemoteControl
             LblPosition.Content = "00:00:00";
             LblFile.Content = "None";
             LblState.Content = "Not Connected";
-            _playlistContent.Clear();
+            PlaylistContent.Clear();
 
             BtnBrowse.IsEnabled = false;
             BtnAddToPlaylist.IsEnabled = false;
@@ -1039,15 +1041,15 @@ namespace MPDN_RemoteControl
 
                 //playlistContent.Remove(sourceItem);
 
-                var idx = _playlistContent.IndexOf(sourceItem);
-                _playlistContent.RemoveAt(idx);
+                var idx = PlaylistContent.IndexOf(sourceItem);
+                PlaylistContent.RemoveAt(idx);
                 PassCommandToServer("RemoveFile|" + idx);
                 var insertIdx = dropInfo.InsertIndex;
                 if (dropInfo.InsertPosition == RelativeInsertPosition.AfterTargetItem)
                     insertIdx--;
-                if (insertIdx > _playlistContent.Count)
-                    insertIdx = _playlistContent.Count - 1;
-                _playlistContent.Insert(insertIdx, sourceItem);
+                if (insertIdx > PlaylistContent.Count)
+                    insertIdx = PlaylistContent.Count - 1;
+                PlaylistContent.Insert(insertIdx, sourceItem);
 
                 PassCommandToServer("InsertFileInPlaylist|" + insertIdx + "|" + sourceItem.Key);
             }
