@@ -16,6 +16,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using GongSolutions.Wpf.DragDrop;
 using Microsoft.Win32;
+using MPDN_RemoteControl.Controls;
 using MPDN_RemoteControl.Objects;
 
 namespace MPDN_RemoteControl
@@ -163,6 +164,7 @@ namespace MPDN_RemoteControl
                     BtnDisconnect.IsEnabled = true;
                     SldrVolume.IsEnabled = true;
                     BtnPlaylistShow.IsEnabled = true;
+                    BtnUrl.IsEnabled = true;
                 });
                 while (true)
                 {
@@ -886,6 +888,7 @@ namespace MPDN_RemoteControl
             BtnPrevious.IsEnabled = false;
             BtnNext.IsEnabled = false;
             BtnPlaylistShow.IsEnabled = false;
+            BtnUrl.IsEnabled = false;
         }
 
         private void btnFullscreen_Click(object sender, RoutedEventArgs e)
@@ -934,23 +937,35 @@ namespace MPDN_RemoteControl
 
         private void BtnAddToPlaylist_Click(object sender, RoutedEventArgs e)
         {
-            OpenFileDialog openFile = new OpenFileDialog();
-            openFile.Multiselect = true;
-            openFile.Title = "Select File(s) to Play";
-            if ((bool)openFile.ShowDialog())
+            var openFile = new OpenFileDialog
             {
-                var files = openFile.FileNames;
-                StringBuilder sb = new StringBuilder();
-                int counter = 1;
-                foreach (var file in files)
-                {
-                    if (counter > 1)
-                        sb.Append(">>");
-                    sb.Append(file);
-                    counter++;
-                }
-                PassCommandToServer("AddFilesToPlaylist|" + sb);
-                BtnPlayPause.IsEnabled = true;
+                Multiselect = true,
+                Title = "Select File(s) to Play"
+            };
+            var showDialog = openFile.ShowDialog();
+            if (showDialog == null || !(bool) showDialog) return;
+            var files = openFile.FileNames;
+            var sb = new StringBuilder();
+            var counter = 1;
+            foreach (var file in files)
+            {
+                if (counter > 1)
+                    sb.Append(">>");
+                sb.Append(file);
+                counter++;
+            }
+            PassCommandToServer("AddFilesToPlaylist|" + sb);
+            BtnPlayPause.IsEnabled = true;
+        }
+
+        private void OpenUrl()
+        {
+            var input = new InputDialog("Add URL to the playlist", "Enter the URL you'd like to add to the playlist");
+            var result = input.ShowDialog();
+            if (result == true && !string.IsNullOrEmpty(input.Response))
+            {
+                var urlToAdd = input.Response;
+                PassCommandToServer($"AddFilesToPlaylist|{urlToAdd}");
             }
         }
 
@@ -1032,5 +1047,14 @@ namespace MPDN_RemoteControl
             myAbout.ShowDialog();
         }
 
+        private void BtnClear_Click(object sender, RoutedEventArgs e)
+        {
+            PassCommandToServer("ClearPlaylist|");
+        }
+
+        private void BtnUrl_Click(object sender, RoutedEventArgs e)
+        {
+            OpenUrl();
+        }
     }
 }
