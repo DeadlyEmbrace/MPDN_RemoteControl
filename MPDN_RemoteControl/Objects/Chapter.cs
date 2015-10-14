@@ -1,4 +1,4 @@
-﻿namespace MPDN_RemoteControl
+﻿namespace MPDN_RemoteControl.Objects
 {
     public class Chapter
     {

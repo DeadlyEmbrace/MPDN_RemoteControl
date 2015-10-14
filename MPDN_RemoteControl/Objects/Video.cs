@@ -1,9 +1,9 @@
-﻿namespace MPDN_RemoteControl
+﻿namespace MPDN_RemoteControl.Objects
 {
-    public class Audio
+    public class Video
     {
         public string Description { get; set; }
         public string Type { get; set; }
-        public bool Active { get; set; } 
+        public bool Active { get; set; }
     }
 }

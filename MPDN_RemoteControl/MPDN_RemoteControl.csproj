@@ -33,6 +33,9 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+	<AllowedReferenceRelatedFileExtensions>
+      .pdb
+    </AllowedReferenceRelatedFileExtensions> 
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="GongSolutions.Wpf.DragDrop">
@@ -60,7 +63,8 @@
     <Compile Include="AboutWindow.xaml.cs">
       <DependentUpon>AboutWindow.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Audio.cs" />
+    <Compile Include="Objects\Audio.cs" />
+    <Compile Include="Objects\Video.cs" />
     <Compile Include="Subtitles.cs" />
     <Page Include="AboutWindow.xaml">
       <SubType>Designer</SubType>
@@ -74,7 +78,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Chapter.cs" />
+    <Compile Include="Objects\Chapter.cs" />
     <Compile Include="ClientGUID.cs" />
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
