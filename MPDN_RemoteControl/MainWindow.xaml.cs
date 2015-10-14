@@ -165,6 +165,7 @@ namespace MPDN_RemoteControl
                     SldrVolume.IsEnabled = true;
                     BtnPlaylistShow.IsEnabled = true;
                     BtnUrl.IsEnabled = true;
+                    BtnClear.IsEnabled = true;
                 });
                 while (true)
                 {
@@ -877,7 +878,7 @@ namespace MPDN_RemoteControl
             cbAudio.IsEnabled = false;
             CbVideo.IsEnabled = false;
             _duration = new TimeSpan(0,0,0,0);
-            _currentFile = String.Empty;
+            _currentFile = string.Empty;
             LblPosition.Content = "00:00:00";
             LblFile.Content = "None";
             LblState.Content = "Not Connected";
@@ -889,6 +890,7 @@ namespace MPDN_RemoteControl
             BtnNext.IsEnabled = false;
             BtnPlaylistShow.IsEnabled = false;
             BtnUrl.IsEnabled = false;
+            BtnClear.IsEnabled = false;
         }
 
         private void btnFullscreen_Click(object sender, RoutedEventArgs e)
@@ -962,11 +964,9 @@ namespace MPDN_RemoteControl
         {
             var input = new InputDialog("Add URL to the playlist", "Enter the URL you'd like to add to the playlist");
             var result = input.ShowDialog();
-            if (result == true && !string.IsNullOrEmpty(input.Response))
-            {
-                var urlToAdd = input.Response;
-                PassCommandToServer($"AddFilesToPlaylist|{urlToAdd}");
-            }
+            if (result != true || string.IsNullOrEmpty(input.Response)) return;
+            var urlToAdd = input.Response;
+            PassCommandToServer($"AddFilesToPlaylist|{urlToAdd}");
         }
 
         private void BtnPrevious_Click(object sender, RoutedEventArgs e)

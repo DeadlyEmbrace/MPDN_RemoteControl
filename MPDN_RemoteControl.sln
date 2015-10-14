@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+VisualStudioVersion = 14.0.22823.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MPDN_RemoteControl", "MPDN_RemoteControl\MPDN_RemoteControl.csproj", "{1384E75F-7293-48B8-B251-99DB02FDA9C1}"
 EndProject
