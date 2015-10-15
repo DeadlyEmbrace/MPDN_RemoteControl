@@ -4,59 +4,134 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="d"
         xmlns:dragDrop="clr-namespace:GongSolutions.Wpf.DragDrop;assembly=GongSolutions.Wpf.DragDrop"
-        Title="RemoteControl" Height="428.665" Width="864.62" Closing="Window_Closing">
+        Title="RemoteControl" Height="454.231" Width="864.62" Closing="Window_Closing" Icon="Icons/RemoteLogo.png">
+    <Window.Resources>
+        <LinearGradientBrush x:Key="BgBrush1" StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Offset="0" Color="#FF4CC705"/>
+            <GradientStop Offset="1" Color="#FF1DB017"/>
+        </LinearGradientBrush>
+        <SolidColorBrush x:Key="ForegroundBrush" Color="White"></SolidColorBrush>
+
+        <Style x:Key="HighlightRow" TargetType="{x:Type DataGridRow}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Playing}" Value="true">
+                    <Setter Property="Background" Value="{StaticResource BgBrush1}" />
+                    <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"></Setter>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+    
     <Grid>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="101"/>
-            <ColumnDefinition Width="350"/>
+            <ColumnDefinition Width="36"/>
+            <ColumnDefinition Width="152.536"/>
+            <ColumnDefinition Width="36"/>
+            <ColumnDefinition Width="162"/>
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="42"/>
-            <RowDefinition Height="112"/>
-            <RowDefinition Height="85"/>
+            <RowDefinition Height="52"/>
+            <RowDefinition Height="100"/>
+            <RowDefinition Height="77"/>
             <RowDefinition Height="32"/>
+            <RowDefinition Height="126"/>
             <RowDefinition/>
-            <RowDefinition Height="25"/>
         </Grid.RowDefinitions>
-        <Button x:Name="BtnConnect" Content="Connect To MPDN" HorizontalAlignment="Left" VerticalAlignment="Top" Width="127" Margin="114,10,0,0" Click="Button_Click" Height="26" Grid.Column="1"/>
-        <Label x:Name="LblStatus" Content="Status: Not Connected" Margin="0,0,2.71,0" Grid.Row="5" VerticalAlignment="Center" HorizontalAlignment="Right" Width="129" Grid.Column="1" Height="25"/>
-        <TextBox x:Name="TxbIp" HorizontalAlignment="Left" Height="23" Margin="81,12,0,0" TextWrapping="Wrap" Text="127.0.0.1:6545" VerticalAlignment="Top" Width="120" Grid.ColumnSpan="2"/>
-        <Label Content="IP Address" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Height="26" Width="66"/>
-        <Label Content="Current File:" Margin="10,10,10,0" Grid.Row="1" VerticalAlignment="Top" Height="17" Padding="0"/>
-        <Label x:Name="LblFile" Content="None" Margin="0,10,2.71,0" Grid.Row="1" VerticalAlignment="Top" Grid.Column="1" Height="17" Padding="0"/>
-        <Button x:Name="BtnBrowse" Content="Browse and Play" HorizontalAlignment="Left" Margin="10,13,0,0" Grid.Row="4" VerticalAlignment="Top" Width="103" Click="btnBrowse_Click" Grid.ColumnSpan="2" Height="21" IsEnabled="False"/>
-        <Label Content="State:" Margin="10,32,10,0" Grid.Row="1" VerticalAlignment="Top" Height="16" Padding="0"/>
-        <Label x:Name="LblState" Content="Not Connected" Grid.Column="1" Margin="0,33,0,0" Grid.Row="1" VerticalAlignment="Top" Padding="0" Height="16"/>
-        <Button x:Name="BtnPlayPause" Content="Play" Grid.Column="1" HorizontalAlignment="Left" Margin="18,13,0,0" Grid.Row="4" VerticalAlignment="Top" Width="75" Click="btnPlayPause_Click" IsEnabled="False" Height="21"/>
-        <Button x:Name="BtnStop" Content="Stop" Grid.Column="1" HorizontalAlignment="Left" Margin="98,13,0,0" Grid.Row="4" VerticalAlignment="Top" Width="75" Click="btnStop_Click" IsEnabled="False" Height="21"/>
-        <Label Content="Position:" Margin="10,53,10,0" Grid.Row="1" VerticalAlignment="Top" Padding="0" Height="16"/>
-        <Label x:Name="LblPosition" Content="00:00:00" Grid.Column="1" Margin="0,53,2.71,0" Grid.Row="1" VerticalAlignment="Top" Padding="0" Height="16"/>
-        <Slider x:Name="SldrSpan" Margin="10,74,2.71,0" Grid.Row="1" VerticalAlignment="Top" Grid.ColumnSpan="2" Grid.Column="0" ValueChanged="sldrSpan_ValueChanged" PreviewMouseLeftButtonDown="sldrSpan_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="sldrSpan_PreviewMouseLeftButtonUp" IsEnabled="False" Height="23"/>
-        <Button x:Name="BtnDisconnect" Content="Disconnect" Grid.Column="1" HorizontalAlignment="Left" Margin="246,10,0,0" VerticalAlignment="Top" Width="97" IsEnabled="False" Height="26" Click="btnDisconnect_Click"/>
-        <Button x:Name="BtnFullscreen" Content="Go FullScreen" Grid.Column="1" HorizontalAlignment="Left" Margin="178,13,0,0" Grid.Row="4" VerticalAlignment="Top" Width="86" IsEnabled="False" Click="btnFullscreen_Click" Height="21"/>
-        <Button x:Name="BtnMute" Content="Mute" Grid.Column="1" Margin="269,13,0,0" Grid.Row="4" VerticalAlignment="Top" Height="21" HorizontalAlignment="Left" Width="75" IsEnabled="False" Click="BtnMute_Click"/>
-        <Label Content="Volume" HorizontalAlignment="Left" Grid.Row="3" VerticalAlignment="Top" Width="53" Padding="0" Height="16" RenderTransformOrigin="0.5,0.5" Grid.Column="1" Margin="48,4,0,0"/>
-        <Slider x:Name="SldrVolume" Grid.Row="3" Margin="141,4,2.71,2" Maximum="100" Grid.Column="1" ValueChanged="sldrVolume_ValueChanged"/>
-        <Label x:Name="LblLevel" Content="0" Grid.Column="1" HorizontalAlignment="Left" Margin="108,4,0,4" Grid.Row="3" Padding="0" Width="28"/>
-        <ComboBox ItemsSource="{Binding Path=(ShowChapters)}" SelectedValuePath="ChapterIndex" DisplayMemberPath="ChapterName" x:Name="cbChapters" HorizontalAlignment="Left" Margin="62,10,0,0" Grid.Row="2" VerticalAlignment="Top" Width="153" SelectionChanged="cbChapters_SelectionChanged" Grid.ColumnSpan="2" Height="22"/>
-        <Label Content="Chapters" HorizontalAlignment="Left" Margin="10,13,0,0" Grid.Row="2" VerticalAlignment="Top" Padding="0" Height="16" Width="47"/>
-        <Label Content="Subtitles" Grid.Column="1" HorizontalAlignment="Left" Margin="140,13,0,0" Grid.Row="2" VerticalAlignment="Top" Padding="0" Height="16" Width="46"/>
-        <ComboBox ItemsSource="{Binding Path=ShowSubtitles}" SelectedValue="SubtitleDesc" DisplayMemberPath="SubtitleDesc" x:Name="cbSubtitles" Grid.Column="1" HorizontalAlignment="Left" Margin="191,10,0,0" Grid.Row="2" VerticalAlignment="Top" Width="153" SelectionChanged="cbSubtitles_SelectionChanged" Height="22"/>
-        <Label Content="Audio" HorizontalAlignment="Left" Margin="10,49,0,0" Grid.Row="2" VerticalAlignment="Top" Padding="0" Height="16" Width="32"/>
-        <ComboBox ItemsSource="{Binding Path=ShowAudioTracks}" SelectedValue="Description" DisplayMemberPath="Description" x:Name="cbAudio" HorizontalAlignment="Left" Margin="62,45,0,0" Grid.Row="2" VerticalAlignment="Top" Width="153" Grid.ColumnSpan="2" SelectionChanged="cbAudio_SelectionChanged" Height="22"/>
-        <Label x:Name="LblVersion" Content="Vx.x.x" HorizontalAlignment="Left" Margin="10,0,0,0" Grid.Row="5" VerticalAlignment="Top" Height="25" Width="66"/>
-        <GroupBox Header="Playlist Controls" Margin="2,38,0,0" Grid.Row="4" VerticalAlignment="Top" Grid.ColumnSpan="2" Height="59">
-            <Grid>
-                <Button x:Name="BtnAddToPlaylist" Content="Browse and add to playlist" HorizontalAlignment="Left" Margin="0,10,0,0" VerticalAlignment="Top" Width="183" Click="BtnAddToPlaylist_Click" Height="20" IsEnabled="False"/>
-                <Button x:Name="BtnPrevious" Content="Previous" HorizontalAlignment="Left" Margin="188,10,0,0" VerticalAlignment="Top" Width="75" Height="20" Click="BtnPrevious_Click" IsEnabled="False"/>
-                <Button x:Name="BtnNext" Content="Next" HorizontalAlignment="Left" Margin="268,10,0,0" VerticalAlignment="Top" Width="86" Height="20" Click="BtnNext_Click" IsEnabled="False"/>
-                <Button x:Name="BtnPlaylistShow" Content="Show/Hide" HorizontalAlignment="Left" Margin="359,8,-2,0" VerticalAlignment="Top" Width="75" Click="Button_Click_1" IsEnabled="False"/>
 
+        <Image Width="22" Source="Icons/IP.png" ToolTip="IP Address" Margin="10,15,0,15" HorizontalAlignment="Left"/>
+        <TextBox x:Name="TxbIp" HorizontalAlignment="Left" Margin="0,15" TextWrapping="Wrap" Text="127.0.0.1:6545" Width="120"
+                 Grid.Row="0" Grid.Column="1"/>
+        <Button x:Name="BtnConnect" ToolTip="Connect To MPDN" HorizontalAlignment="Left" Width="32" Margin="127,10,0,10" Click="Button_Click"
+                Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2">
+            <Image Source="Icons/Connect.png"></Image>
+        </Button>
+        <Button x:Name="BtnDisconnect" ToolTip="Disconnect" Grid.Row="0" Grid.Column="2" HorizontalAlignment="Left" Margin="11,10,0,0" VerticalAlignment="Top" Width="32" IsEnabled="False" Height="32" Click="btnDisconnect_Click" Grid.ColumnSpan="2">
+            <Image Source="Icons/Disconnect.png"></Image>
+        </Button>
+
+        <Image Source="Icons/CurrentFile.png" ToolTip="Current File" Margin="10,10,0,74" Grid.Row="1"
+               Grid.Column="0" HorizontalAlignment="Left" Width="16"/>
+        <Label x:Name="LblFile" Content="None" Margin="0,10,3,0" Grid.Row="1" VerticalAlignment="Top" Grid.Column="1" Height="16" Padding="0" Grid.ColumnSpan="3"/>
+        <Image Width="16" Source="Icons/Status.png" ToolTip="Playback State" Margin="10,33,0,51" Grid.Row="1"
+               Grid.Column="0" HorizontalAlignment="Left"/>
+        <Label x:Name="LblState" Content="Not Connected" Grid.Column="1" Margin="0,33,0,0" Grid.Row="1" VerticalAlignment="Top" Padding="0" Height="16" Grid.ColumnSpan="3"/>
+        <Image Width="16" Source="Icons/Position.png" ToolTip="Playback Position" Margin="10,53,0,31" Grid.Row="1"
+               Grid.Column="0" HorizontalAlignment="Left"/>
+        <Label x:Name="LblPosition" Content="00:00:00" Grid.Column="1" Margin="0,53,3,0" Grid.Row="1" VerticalAlignment="Top" Padding="0" Height="16" Grid.ColumnSpan="3"/>
+        <Slider x:Name="SldrSpan" Margin="10,74,0,0" Grid.Row="1" VerticalAlignment="Top" Grid.ColumnSpan="4" Grid.Column="0" ValueChanged="sldrSpan_ValueChanged" PreviewMouseLeftButtonDown="sldrSpan_PreviewMouseLeftButtonDown" PreviewMouseLeftButtonUp="sldrSpan_PreviewMouseLeftButtonUp" IsEnabled="False" Height="23" HorizontalAlignment="Left" Width="368"/>
+
+        <Image Source="Icons/Chapter.png" ToolTip="Chapters" Margin="10,13,10,0" Grid.Row="2"
+               Grid.Column="0" Height="16" VerticalAlignment="Top"/>
+        <ComboBox ItemsSource="{Binding Path=(ShowChapters)}" SelectedValuePath="ChapterIndex" DisplayMemberPath="ChapterName" x:Name="CbChapters" HorizontalAlignment="Left" Margin="0,10,0,0" Grid.Row="2" VerticalAlignment="Top" Width="153" SelectionChanged="cbChapters_SelectionChanged" Height="22" Grid.Column="1"/>
+        <Image Source="Icons/Audio.png" ToolTip="Audio Tracks" Margin="10,49,10,0" Grid.Row="2"
+               Grid.Column="0" Height="16" VerticalAlignment="Top"/>
+        <ComboBox ItemsSource="{Binding Path=ShowAudioTracks}" SelectedValue="Description" DisplayMemberPath="Description" x:Name="CbAudio" HorizontalAlignment="Left" Margin="0,45,0,0" Grid.Row="2" Width="153" SelectionChanged="cbAudio_SelectionChanged" Grid.Column="1" Height="22" VerticalAlignment="Top"/>
+        <Image Source="Icons/Subtitle.png" ToolTip="Subtitles" Grid.Column="2" Margin="10,13,0,0" Grid.Row="2" HorizontalAlignment="Left" Width="16" Height="16" VerticalAlignment="Top"/>
+        <ComboBox ItemsSource="{Binding Path=ShowSubtitles}" SelectedValue="SubtitleDesc" DisplayMemberPath="SubtitleDesc" x:Name="CbSubtitles" Grid.Column="3" HorizontalAlignment="Left" Margin="0,10,0,0" Grid.Row="2" VerticalAlignment="Top" Width="153" SelectionChanged="cbSubtitles_SelectionChanged" Height="22"/>
+        <Image Width="16" Source="Icons/Video.png" ToolTip="Video Tracks" Grid.Column="2" Margin="10,49,0,0" Grid.Row="2" HorizontalAlignment="Left" Height="16" VerticalAlignment="Top"/>
+        <ComboBox ItemsSource="{Binding Path=ShowVideoTracks}" SelectedValue="Description" DisplayMemberPath="Description" x:Name="CbVideo" Grid.Column="3" HorizontalAlignment="Left" Margin="0,45,0,0" Grid.Row="2" VerticalAlignment="Top" Width="153" SelectionChanged="CbVideo_SelectionChanged" Height="22"/>
+
+        <Image Source="Icons/Volume.png" HorizontalAlignment="Left" Margin="10,8,0,0" Grid.Row="3" Grid.Column="0"
+               Width="16" Height="16" VerticalAlignment="Top"/>
+        <Label x:Name="LblLevel" Content="0" Grid.Column="1" HorizontalAlignment="Left" Margin="10,7,0,0" Grid.Row="3" Padding="0" Width="28" Height="18" VerticalAlignment="Top"/>
+        <Slider x:Name="SldrVolume" Grid.Row="3" Margin="43,7,0,0" Maximum="100" Grid.Column="1" ValueChanged="sldrVolume_ValueChanged" Grid.ColumnSpan="3" Height="18" VerticalAlignment="Top" HorizontalAlignment="Left" Width="299"/>
+
+        <Grid Height="52" Grid.Row="4" VerticalAlignment="Top" Grid.ColumnSpan="4" Grid.Column="0" HorizontalAlignment="Center">
+            <Button x:Name="BtnBrowse" ToolTip="Browse and Play" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="32" Click="btnBrowse_Click" Height="32" IsEnabled="False">
+                <Image Source="Icons/AddToPlaylist.png"/>
+            </Button>
+            <Button x:Name="BtnPlayPause" ToolTip="Play" HorizontalAlignment="Left" Margin="47,10,0,0" VerticalAlignment="Top" Width="32" Click="btnPlayPause_Click" IsEnabled="False" Height="32">
+                <Image Name="ImgPlayPause" Source="Icons/Play.png"></Image>
+            </Button>
+            <Button x:Name="BtnStop" ToolTip="Stop" HorizontalAlignment="Left" Margin="84,10,0,0" VerticalAlignment="Top" Width="32" Click="btnStop_Click" IsEnabled="False" Height="32">
+                <Image Source="Icons/Stop.png"></Image>
+            </Button>
+            <Button x:Name="BtnFullscreen" ToolTip="Go FullScreen" HorizontalAlignment="Left" Margin="121,10,0,0" VerticalAlignment="Top" Width="32" IsEnabled="False" Click="btnFullscreen_Click" Height="32">
+                <Image Name="ImgFullscreen" Source="Icons/FullScreen.png"></Image>
+            </Button>
+            <Button x:Name="BtnMute" ToolTip="Mute" Margin="158,10,0,0" HorizontalAlignment="Left" Width="32" IsEnabled="False" Click="BtnMute_Click" Height="32" VerticalAlignment="Top">
+                <Image Name="ImgMute" Source="Icons/Mute.png"></Image>
+            </Button>
+
+        </Grid>
+
+        <GroupBox Header="Playlist Controls" Margin="10,52,10,0" Grid.Row="4" Grid.ColumnSpan="4" Grid.Column="0">
+            <Grid HorizontalAlignment="Center">
+                <Button x:Name="BtnAddToPlaylist" ToolTip="Browse and add to playlist" HorizontalAlignment="Left" Margin="10,10,0,0" Width="32" Click="BtnAddToPlaylist_Click" IsEnabled="False" Height="32" VerticalAlignment="Top">
+                    <Image Source="Icons/AddToPlaylist.png"></Image>
+                </Button>
+                <Button x:Name="BtnUrl" ToolTip="Add Url" HorizontalAlignment="Left" Margin="47,10,0,0" VerticalAlignment="Top" Width="32" Height="32" Click="BtnUrl_Click" IsEnabled="False">
+                    <Image Source="Icons/AddUrlToPlaylist.png"></Image>
+                </Button>
+
+                <Button x:Name="BtnPrevious" ToolTip="Previous" HorizontalAlignment="Left" Margin="84,10,0,0" VerticalAlignment="Top" Width="32" Height="32" Click="BtnPrevious_Click" IsEnabled="False">
+                    <Image Source="Icons/SkipBack.png"></Image>
+                </Button>
+                <Button x:Name="BtnNext" ToolTip="Next" HorizontalAlignment="Left" Margin="121,10,0,0" VerticalAlignment="Top" Width="32" Height="32" Click="BtnNext_Click" IsEnabled="False">
+                    <Image Source="Icons/SkipForward.png"></Image>
+                </Button>
+                <Button x:Name="BtnClear" ToolTip="Clear Playlist" HorizontalAlignment="Left" Margin="158,10,0,0" VerticalAlignment="Top" Width="32" Height="32" Click="BtnClear_Click" IsEnabled="False">
+                    <Image Source="Icons/ClearPlaylist.png"></Image>
+                </Button>
+                <Button x:Name="BtnPlaylistShow" ToolTip="Show" HorizontalAlignment="Left" Margin="195,10,0,0" Width="32" Click="Button_Click_1" IsEnabled="False" Height="32" VerticalAlignment="Top">
+                    <Image Name="ImgShow" Source="Icons/Show.png"></Image>
+                </Button>
             </Grid>
         </GroupBox>
-        <DataGrid x:Name="DataGridPlaylist" Grid.Column="2" Margin="10" Grid.RowSpan="5" IsReadOnly="True" MouseDoubleClick="DataGridPlaylist_MouseDoubleClick" SelectionMode="Single" KeyUp="DataGridPlaylist_KeyUp" dragDrop:DragDrop.IsDragSource="True" dragDrop:DragDrop.IsDropTarget="True" dragDrop:DragDrop.DropHandler="{Binding}" Grid.Row="1" />
-        <Button x:Name="BtnAbout" Content="About" Grid.Column="2" Margin="0,10,10,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="75" Click="BtnAbout_Click"/>
 
+        <Label Padding="0"  x:Name="LblStatus" Content="Status: Not Connected" Margin="0,0,10,5" Grid.Row="5" VerticalAlignment="Bottom" HorizontalAlignment="Right" Width="133" Grid.Column="3" Height="21" HorizontalContentAlignment="Right"></Label>
+        <Label x:Name="LblVersion" Content="Vx.x.x" HorizontalAlignment="Left" Margin="8,0,0,7" Grid.Row="5" VerticalAlignment="Bottom" Height="24" Width="66" Grid.ColumnSpan="2"
+               Grid.Column="0" />
+
+        <DataGrid ItemsSource="{Binding Path=PlaylistContent}" RowStyle="{StaticResource HighlightRow}" x:Name="DataGridPlaylist" Grid.Column="4" Margin="10" Grid.RowSpan="5" IsReadOnly="True" MouseDoubleClick="DataGridPlaylist_MouseDoubleClick" SelectionMode="Single" KeyUp="DataGridPlaylist_KeyUp" dragDrop:DragDrop.IsDragSource="True" dragDrop:DragDrop.IsDropTarget="True" dragDrop:DragDrop.DropHandler="{Binding}" Grid.Row="1" AutoGenerateColumns="False">
+           <DataGrid.Columns>
+                <DataGridTextColumn Binding="{Binding Path=Filename}" Header="File"></DataGridTextColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <Button x:Name="BtnAbout" ToolTip="About" Grid.Row="0" Grid.Column="4" Margin="0,10,10,0" VerticalAlignment="Top" HorizontalAlignment="Right" Width="32" Click="BtnAbout_Click" Height="32">
+            <Image Source="Icons/About.png"></Image>
+        </Button>
     </Grid>
 </Window>

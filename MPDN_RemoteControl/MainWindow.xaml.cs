@@ -13,17 +13,19 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Documents;
 using System.Windows.Input;
+using System.Windows.Media.Imaging;
 using GongSolutions.Wpf.DragDrop;
 using Microsoft.Win32;
+using MPDN_RemoteControl.Controls;
+using MPDN_RemoteControl.Objects;
 
 namespace MPDN_RemoteControl
 {
     /// <summary>
     /// Interaction logic for RemoteControl.xaml
     /// </summary>
-    public partial class RemoteControl : Window, IDropTarget
+    public partial class RemoteControl : IDropTarget
     {
         #region Variables
         private Socket _server;
@@ -38,40 +40,27 @@ namespace MPDN_RemoteControl
         private bool _isFullscreen = false;
         private bool _muted = false;
         private readonly ClientGuid _guidManager = new ClientGuid();
-        private ObservableCollection<Chapter> _showChapters = new ObservableCollection<Chapter>();
-        private ObservableCollection<Subtitles> _showSubtitles = new ObservableCollection<Subtitles>();
-        private ObservableCollection<Audio> _audioTracks = new ObservableCollection<Audio>();
-        ObservableCollection<KeyValuePair<string, bool>> playlistContent = new ObservableCollection<KeyValuePair<string, bool>>();
+        private readonly object _videoLock = new object();
+
         #endregion
 
         #region Constuctor
         public RemoteControl()
         {
+            DataContext = this;
             InitializeComponent();
-            this.DataContext = this;
+
             _clientAuthGuid = _guidManager.GetGuid;
             LoadVersionNumber();
         }
         #endregion
 
         #region Properties
-        public ObservableCollection<Chapter> ShowChapters
-        {
-            get { return _showChapters;}
-            set { _showChapters = value; }
-        }
-
-        public ObservableCollection<Subtitles> ShowSubtitles
-        {
-            get { return _showSubtitles; }
-            set { _showSubtitles = value; }
-        }
-
-        public ObservableCollection<Audio> ShowAudioTracks
-        {
-            get { return _audioTracks; }
-            set { _audioTracks = value; }
-        }
+        public ObservableCollection<Chapter> ShowChapters { get; set; } = new ObservableCollection<Chapter>();
+        public ObservableCollection<Subtitles> ShowSubtitles { get; set; } = new ObservableCollection<Subtitles>();
+        public ObservableCollection<Audio> ShowAudioTracks { get; set; } = new ObservableCollection<Audio>();
+        public ObservableCollection<Video> ShowVideoTracks { get; set; } = new ObservableCollection<Video>();
+        public ObservableCollection<PlaylistObject> PlaylistContent { get; set; } = new ObservableCollection<PlaylistObject>();
 
         #endregion
 
@@ -177,6 +166,8 @@ namespace MPDN_RemoteControl
                     BtnDisconnect.IsEnabled = true;
                     SldrVolume.IsEnabled = true;
                     BtnPlaylistShow.IsEnabled = true;
+                    BtnUrl.IsEnabled = true;
+                    BtnClear.IsEnabled = true;
                 });
                 while (true)
                 {
@@ -268,12 +259,19 @@ namespace MPDN_RemoteControl
                         DisplayAudioTracks(cmd[1]);
                         break;
                     case "AudioChanged":
+                        ChangeActiveAudioTrack(cmd[1]);
                         break;
                     case "PlaylistShow":
                         PlaylistStateChanged(cmd[1]);
                         break;
                     case "PlaylistContent":
                         ShowPlaylistContent(cmd[1]);
+                        break;
+                    case "VideoTracks":
+                        DisplayVideoTracks(cmd[1]);
+                        break;
+                    case "VideoChanged":
+                        ChangeActiveVideoTrack(cmd[1]);
                         break;
                 }
             }
@@ -286,21 +284,25 @@ namespace MPDN_RemoteControl
         private void ShowPlaylistContent(string cmd)
         {
             var items = Regex.Split(cmd, ">>");
-            Dispatcher.Invoke(() => playlistContent.Clear());
+            Dispatcher.Invoke(() => PlaylistContent.Clear());
             foreach (var item in items)
             {
                 var finalSplit = Regex.Split(item, "]]");
-                if (finalSplit.Count() == 2)
-                {
-                    KeyValuePair<string, bool> tmpItem = new KeyValuePair<string, bool>(finalSplit[0],
-                    bool.Parse(finalSplit[1]));
-                    Dispatcher.Invoke(() => playlistContent.Add(tmpItem));
+                if (finalSplit.Length == 2)
+                { 
+                    var tmpItem = new PlaylistObject
+                    {
+                        Filename = finalSplit[0],
+                        Playing = bool.Parse(finalSplit[1])
+                    };
+
+                    Dispatcher.Invoke(() => PlaylistContent.Add(tmpItem));
                 }
             }
 
             Dispatcher.Invoke(() =>
             {
-                if (playlistContent.Count > 1)
+                if (PlaylistContent.Count > 1)
                 {
                     BtnPrevious.IsEnabled = true;
                     BtnNext.IsEnabled = true;
@@ -311,7 +313,7 @@ namespace MPDN_RemoteControl
                     BtnNext.IsEnabled = false;
                 }
 
-                DataGridPlaylist.ItemsSource = playlistContent;
+                //DataGridPlaylist.ItemsSource = _playlistContent;
             });
         }
 
@@ -323,12 +325,14 @@ namespace MPDN_RemoteControl
                 {
                     Dispatcher.Invoke(() =>
                     {
-                        BtnPlaylistShow.Content = "Hide";
+                        BtnPlaylistShow.ToolTip = "Hide";
+                        ImgShow.Source = new BitmapImage(new Uri("pack://application:,,,/MPDN_RemoteControl;component/Icons/Hide.png"));
                     });
                 }
                 else
                 {
-                    BtnPlaylistShow.Content = "Show";
+                    BtnPlaylistShow.ToolTip = "Show";
+                    ImgShow.Source = new BitmapImage(new Uri("pack://application:,,,/MPDN_RemoteControl;component/Icons/Show.png"));
                 }
             });
         }
@@ -342,7 +346,7 @@ namespace MPDN_RemoteControl
                     LblStatus.Content = "Status: Connected";
                     LblState.Content = "Connected";
                 });
-                PassCommandToServer("GetCurrentState|" + _myGuid.ToString());
+                PassCommandToServer("GetCurrentState|" + _myGuid);
             }
         }
 
@@ -364,12 +368,19 @@ namespace MPDN_RemoteControl
                 LblFile.Content = command;
                 LblState.Content = "Playing";
                 _playState = "Playing";
-                BtnPlayPause.Content = "Pause";
+                BtnPlayPause.ToolTip = "Pause";
+                ImgPlayPause.Source = new BitmapImage(new Uri("pack://application:,,,/MPDN_RemoteControl;component/Icons/Pause.png"));
                 BtnPlayPause.IsEnabled = true;
                 SldrSpan.IsEnabled = true;
                 BtnStop.IsEnabled = true;
                 BtnFullscreen.IsEnabled = true;
                 BtnMute.IsEnabled = true;
+                var currFile = PlaylistContent.FirstOrDefault(t => t.Playing);
+                if (currFile != null)
+                    currFile.Playing = false;
+                var nextFile = PlaylistContent.FirstOrDefault(t => t.Filename == command);
+                if (nextFile != null)
+                    nextFile.Playing = true;
             });
             PassCommandToServer("GetDuration|" + _myGuid);
         }
@@ -381,7 +392,8 @@ namespace MPDN_RemoteControl
                 LblFile.Content = command;
                 LblState.Content = "Paused";
                 _playState = "Paused";
-                BtnPlayPause.Content = "Play";
+                BtnPlayPause.ToolTip = "Play";
+                ImgPlayPause.Source = new BitmapImage(new Uri("pack://application:,,,/MPDN_RemoteControl;component/Icons/Play.png"));
                 SetPlaybackButtonState(true);
             });
         }
@@ -393,7 +405,8 @@ namespace MPDN_RemoteControl
                 LblFile.Content = command;
                 LblState.Content = "Stopped";
                 _playState = "Stopped";
-                BtnPlayPause.Content = "Play";
+                BtnPlayPause.ToolTip = "Play";
+                ImgPlayPause.Source = new BitmapImage(new Uri("pack://application:,,,/MPDN_RemoteControl;component/Icons/Play.png"));
                 BtnStop.IsEnabled = false;
             });
         }
@@ -405,8 +418,9 @@ namespace MPDN_RemoteControl
                 LblFile.Content = "None";
                 //LblState.Content = "Disconnected";
                 _playState = "Disconnected";
-                BtnPlayPause.Content = "Play";
-                _currentFile = String.Empty;
+                BtnPlayPause.ToolTip = "Play";
+                ImgPlayPause.Source = new BitmapImage(new Uri("pack://application:,,,/MPDN_RemoteControl;component/Icons/Play.png"));
+                _currentFile = string.Empty;
             });
         }
 
@@ -418,7 +432,8 @@ namespace MPDN_RemoteControl
                 LblFile.Content = "None";
                 //LblState.Content = "Disconnected";
                 _playState = "Disconnected";
-                BtnPlayPause.Content = "Play";
+                BtnPlayPause.ToolTip = "Play";
+                ImgPlayPause.Source = new BitmapImage(new Uri("pack://application:,,,/MPDN_RemoteControl;component/Icons/Play.png"));
                 CloseConnection();
             });
         }
@@ -433,12 +448,12 @@ namespace MPDN_RemoteControl
                     _currenLocation = 0;
                     long.TryParse(command, out _currenLocation);
                     var span = TimeSpan.FromTicks(_currenLocation * 10);
-                    var currChapter = _showChapters.FirstOrDefault(t => t.ChapterLocation >= _currenLocation);
-                    if (currChapter != null && cbChapters.SelectedIndex != currChapter.ChapterIndex)
+                    var currChapter = ShowChapters.FirstOrDefault(t => t.ChapterLocation >= _currenLocation);
+                    if (currChapter != null && CbChapters.SelectedIndex != currChapter.ChapterIndex)
                     {
-                        cbChapters.SelectionChanged -= cbChapters_SelectionChanged;
-                        cbChapters.SelectedIndex = (currChapter.ChapterIndex - 2);
-                        cbChapters.SelectionChanged += cbChapters_SelectionChanged;
+                        CbChapters.SelectionChanged -= cbChapters_SelectionChanged;
+                        CbChapters.SelectedIndex = (currChapter.ChapterIndex - 2);
+                        CbChapters.SelectionChanged += cbChapters_SelectionChanged;
                     }
 
                     string strDuration = span.Hours.ToString("00") + ":" + span.Minutes.ToString("00") + ":" + span.Seconds.ToString("00") + "\\" + _duration;
@@ -465,16 +480,18 @@ namespace MPDN_RemoteControl
         {
             Dispatcher.Invoke(() =>
             {
-                bool fs = false;
-                Boolean.TryParse(command, out fs);
+                bool fs;
+                bool.TryParse(command, out fs);
                 _isFullscreen = fs;
                 if (_isFullscreen)
                 {
-                    BtnFullscreen.Content = "Exit Fullscreen";
+                    BtnFullscreen.ToolTip = "Exit Fullscreen";
+                    ImgFullscreen.Source = new BitmapImage(new Uri("pack://application:,,,/MPDN_RemoteControl;component/Icons/LeaveFullscreen.png"));
                 }
                 else
                 {
-                    BtnFullscreen.Content = "Go Fullscreen";
+                    BtnFullscreen.ToolTip = "Go Fullscreen";
+                    ImgFullscreen.Source = new BitmapImage(new Uri("pack://application:,,,/MPDN_RemoteControl;component/Icons/FullScreen.png"));
                 }
             });
         }
@@ -488,11 +505,13 @@ namespace MPDN_RemoteControl
                 _muted = muted;
                 if (muted)
                 {
-                    BtnMute.Content = "Unmute";
+                    BtnMute.ToolTip = "Unmute";
+                    ImgMute.Source = new BitmapImage(new Uri("pack://application:,,,/MPDN_RemoteControl;component/Icons/UnMute.png"));
                 }
                 else
                 {
-                    BtnMute.Content = "Mute";
+                    BtnMute.ToolTip = "Mute";
+                    ImgMute.Source = new BitmapImage(new Uri("pack://application:,,,/MPDN_RemoteControl;component/Icons/Mute.png"));
                 }
             });
         }
@@ -513,11 +532,46 @@ namespace MPDN_RemoteControl
             });
         }
 
+        private void DisplayVideoTracks(string videoTracks)
+        {
+            try
+            {
+                lock(_videoLock)
+                {
+                Dispatcher.Invoke(() => ShowVideoTracks.Clear());
+                var videoSubstrings = Regex.Split(videoTracks, "]]");
+                    foreach (var track in videoSubstrings)
+                    {
+                        var splitData = Regex.Split(track, ">>");
+                        int trackNumber;
+                        int.TryParse(splitData[0], out trackNumber);
+                        bool isActive;
+                        bool.TryParse(splitData[3], out isActive);
+                        if (trackNumber > 0)
+                        {
+                            var tmpVideo = new Video
+                            {
+                                Description = splitData[1],
+                                Type = splitData[2],
+                                Active = isActive
+                            };
+                            Dispatcher.Invoke(() => ShowVideoTracks.Add(tmpVideo));
+                        }
+                    }
+                    UpdateVideoControl();
+                }
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
         private void DisplayAudioTracks(string audioTracks)
         {
             try
             {
-                Dispatcher.Invoke(() => _audioTracks.Clear());
+                Dispatcher.Invoke(() => ShowAudioTracks.Clear());
                 var audioSubstrings = Regex.Split(audioTracks, "]]");
                 foreach (var track in audioSubstrings)
                 {
@@ -535,7 +589,7 @@ namespace MPDN_RemoteControl
                             Type = splitData[2],
                             Active = isActive
                         };
-                        Dispatcher.Invoke(() => _audioTracks.Add(tmpAudio));
+                        Dispatcher.Invoke(() => ShowAudioTracks.Add(tmpAudio));
                     }
                 }
                 UpdateAudioControl();
@@ -548,42 +602,69 @@ namespace MPDN_RemoteControl
 
         private void ChangeActiveAudioTrack(string track)
         {
-            var currentTrack = _audioTracks.FirstOrDefault(t => t.Active);
+            var currentTrack = ShowAudioTracks.FirstOrDefault(t => t.Active);
             if (currentTrack != null && currentTrack.Description != track)
             {
                 currentTrack.Active = false;
-                var newTrack = _audioTracks.FirstOrDefault(t => t.Description == track);
+                var newTrack = ShowAudioTracks.FirstOrDefault(t => t.Description == track);
                 if (newTrack != null)
                     newTrack.Active = true;
                 UpdateAudioControl();
             }
         }
 
+        private void ChangeActiveVideoTrack(string track)
+        {
+            var currentTrack = ShowVideoTracks.FirstOrDefault(t => t.Active);
+            if (currentTrack == null || currentTrack.Description == track) return;
+            currentTrack.Active = false;
+            var newTrack = ShowVideoTracks.FirstOrDefault(t => t.Description == track);
+            if (newTrack != null)
+                newTrack.Active = true;
+            UpdateVideoControl();
+        }
+
         private void UpdateAudioControl()
         {
             Dispatcher.Invoke(() =>
             {
-                if (_audioTracks.Count > 0)
+                if (ShowAudioTracks.Count > 0)
                 {
-                    cbAudio.IsEnabled = true;
-                    cbAudio.SelectionChanged -= cbAudio_SelectionChanged;
-                    cbAudio.SelectedItem = _audioTracks.FirstOrDefault(t => t.Active);
-                    cbAudio.SelectionChanged += cbAudio_SelectionChanged;
+                    CbAudio.IsEnabled = true;
+                    CbAudio.SelectionChanged -= cbAudio_SelectionChanged;
+                    CbAudio.SelectedItem = ShowAudioTracks.FirstOrDefault(t => t.Active);
+                    CbAudio.SelectionChanged += cbAudio_SelectionChanged;
                 }
                 else
-                    cbAudio.IsEnabled = false;
+                    CbAudio.IsEnabled = false;
 
             });
         }
 
 
+        private void UpdateVideoControl()
+        {
+            Dispatcher.Invoke(() =>
+            {
+                if (ShowVideoTracks.Count > 0)
+                {
+                    CbVideo.IsEnabled = true;
+                    CbVideo.SelectionChanged -= CbVideo_SelectionChanged;
+                    CbVideo.SelectedItem = ShowVideoTracks.FirstOrDefault(t => t.Active);
+                    CbVideo.SelectionChanged += CbVideo_SelectionChanged;
+                }
+                else
+                    CbVideo.IsEnabled = false;
+            });
+        }
+
         private void ChangeActiveSubtitles(string subDesc)
         {
-            var currentSub = _showSubtitles.FirstOrDefault(t => t.ActiveSub);
+            var currentSub = ShowSubtitles.FirstOrDefault(t => t.ActiveSub);
             if(currentSub != null && currentSub.SubtitleDesc != subDesc)
             {
                 currentSub.ActiveSub = false;
-                var newSubs = _showSubtitles.FirstOrDefault(t => t.SubtitleDesc == subDesc);
+                var newSubs = ShowSubtitles.FirstOrDefault(t => t.SubtitleDesc == subDesc);
                 if(newSubs != null)
                     newSubs.ActiveSub = true;
                 UpdateSubControl();
@@ -595,15 +676,15 @@ namespace MPDN_RemoteControl
         {
             Dispatcher.Invoke(() =>
             {
-                if (_showSubtitles.Count > 0)
+                if (ShowSubtitles.Count > 0)
                 {
-                    cbSubtitles.IsEnabled = true;
-                    cbSubtitles.SelectionChanged -= cbSubtitles_SelectionChanged;
-                    cbSubtitles.SelectedItem = _showSubtitles.FirstOrDefault(t => t.ActiveSub);
-                    cbSubtitles.SelectionChanged += cbSubtitles_SelectionChanged;
+                    CbSubtitles.IsEnabled = true;
+                    CbSubtitles.SelectionChanged -= cbSubtitles_SelectionChanged;
+                    CbSubtitles.SelectedItem = ShowSubtitles.FirstOrDefault(t => t.ActiveSub);
+                    CbSubtitles.SelectionChanged += cbSubtitles_SelectionChanged;
                 }
                 else
-                    cbSubtitles.IsEnabled = false;
+                    CbSubtitles.IsEnabled = false;
             });
         }
 
@@ -611,7 +692,7 @@ namespace MPDN_RemoteControl
         {
             try
             {
-                Dispatcher.Invoke(() => _showSubtitles.Clear());
+                Dispatcher.Invoke(() => ShowSubtitles.Clear());
                 var subStrings = Regex.Split(subs, "]]");
                 if (subStrings.Count() > 1)
                 {
@@ -631,7 +712,7 @@ namespace MPDN_RemoteControl
                                 SubtitleType = splitData[2],
                                 ActiveSub = isActive
                             };
-                            Dispatcher.Invoke(() => _showSubtitles.Add(tmpSub));
+                            Dispatcher.Invoke(() => ShowSubtitles.Add(tmpSub));
                         }
                     }
                 }
@@ -647,7 +728,7 @@ namespace MPDN_RemoteControl
         {
             try
             {
-                Dispatcher.Invoke(() => _showChapters.Clear());
+                Dispatcher.Invoke(() => ShowChapters.Clear());
                 var chapterStrings = Regex.Split(chapters, "]]");
                 foreach (var singleChapter in chapterStrings)
                 {
@@ -659,24 +740,24 @@ namespace MPDN_RemoteControl
                         long loc = -1;
                         long.TryParse(splitData[2], out loc);
                         Chapter tmpChapter = new Chapter() {ChapterIndex = chapterNumber, ChapterName = splitData[1], ChapterLocation = loc};
-                        Dispatcher.Invoke(() => _showChapters.Add(tmpChapter));
+                        Dispatcher.Invoke(() => ShowChapters.Add(tmpChapter));
                     }
                 }
                 Dispatcher.Invoke(() =>
                 {
-                    if (_showChapters.Count > 0)
+                    if (ShowChapters.Count > 0)
                     {
-                        var currChapter = _showChapters.FirstOrDefault(t => t.ChapterLocation >= _currenLocation);
-                        if (currChapter != null && cbChapters.SelectedIndex != currChapter.ChapterIndex)
+                        var currChapter = ShowChapters.FirstOrDefault(t => t.ChapterLocation >= _currenLocation);
+                        if (currChapter != null && CbChapters.SelectedIndex != currChapter.ChapterIndex)
                         {
-                            cbChapters.SelectionChanged -= cbChapters_SelectionChanged;
-                            cbChapters.SelectedIndex = (currChapter.ChapterIndex - 2);
-                            cbChapters.SelectionChanged += cbChapters_SelectionChanged;
+                            CbChapters.SelectionChanged -= cbChapters_SelectionChanged;
+                            CbChapters.SelectedIndex = (currChapter.ChapterIndex - 2);
+                            CbChapters.SelectionChanged += cbChapters_SelectionChanged;
                         }
-                        cbChapters.IsEnabled = true;
+                        CbChapters.IsEnabled = true;
                     }
                     else
-                        cbChapters.IsEnabled = false;
+                        CbChapters.IsEnabled = false;
                 });
 
             }
@@ -804,31 +885,35 @@ namespace MPDN_RemoteControl
             SetConnectButtonState(true);
             SetPlaybackButtonState(false);
             LblStatus.Content = "Status: Not Connected";
-            cbChapters.SelectionChanged -= cbChapters_SelectionChanged;
-            _showChapters.Clear();
-            cbChapters.SelectionChanged += cbChapters_SelectionChanged;
-            cbSubtitles.SelectionChanged -= cbSubtitles_SelectionChanged;
-            _showSubtitles.Clear();
-            cbSubtitles.SelectionChanged -= cbSubtitles_SelectionChanged;
-            cbAudio.SelectionChanged -= cbAudio_SelectionChanged;
-            _audioTracks.Clear();
-            cbAudio.SelectionChanged += cbAudio_SelectionChanged;
-            cbChapters.IsEnabled = false;
-            cbSubtitles.IsEnabled = false;
+            CbChapters.SelectionChanged -= cbChapters_SelectionChanged;
+            ShowChapters.Clear();
+            CbChapters.SelectionChanged += cbChapters_SelectionChanged;
+            CbSubtitles.SelectionChanged -= cbSubtitles_SelectionChanged;
+            ShowSubtitles.Clear();
+            CbSubtitles.SelectionChanged -= cbSubtitles_SelectionChanged;
+            CbAudio.SelectionChanged -= cbAudio_SelectionChanged;
+            ShowAudioTracks.Clear();
+            ShowVideoTracks.Clear();
+            CbAudio.SelectionChanged += cbAudio_SelectionChanged;
+            CbChapters.IsEnabled = false;
+            CbSubtitles.IsEnabled = false;
             SldrVolume.IsEnabled = false;
-            cbAudio.IsEnabled = false;
+            CbAudio.IsEnabled = false;
+            CbVideo.IsEnabled = false;
             _duration = new TimeSpan(0,0,0,0);
-            _currentFile = String.Empty;
+            _currentFile = string.Empty;
             LblPosition.Content = "00:00:00";
             LblFile.Content = "None";
             LblState.Content = "Not Connected";
-            playlistContent.Clear();
+            PlaylistContent.Clear();
 
             BtnBrowse.IsEnabled = false;
             BtnAddToPlaylist.IsEnabled = false;
             BtnPrevious.IsEnabled = false;
             BtnNext.IsEnabled = false;
             BtnPlaylistShow.IsEnabled = false;
+            BtnUrl.IsEnabled = false;
+            BtnClear.IsEnabled = false;
         }
 
         private void btnFullscreen_Click(object sender, RoutedEventArgs e)
@@ -849,45 +934,62 @@ namespace MPDN_RemoteControl
 
         private void cbChapters_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            var item = cbChapters.SelectedItem as Chapter;
+            var item = CbChapters.SelectedItem as Chapter;
             if(item != null)
                 PassCommandToServer("Seek|" + item.ChapterLocation);
         }
 
         private void cbSubtitles_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            var sub = cbSubtitles.SelectedItem as Subtitles;
+            var sub = CbSubtitles.SelectedItem as Subtitles;
             if(sub != null)
                 PassCommandToServer("ActiveSubTrack|" + sub.SubtitleDesc);
         }
 
         private void cbAudio_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            var aud = cbAudio.SelectedItem as Audio;
+            var aud = CbAudio.SelectedItem as Audio;
             if(aud != null)
                 PassCommandToServer("ActiveAudioTrack|" + aud.Description);
         }
 
+        private void CbVideo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var vid = CbVideo.SelectedItem as Video;
+            if(vid != null)
+                PassCommandToServer("ActiveVideoTrack|" + vid.Description);
+        }
+
         private void BtnAddToPlaylist_Click(object sender, RoutedEventArgs e)
         {
-            OpenFileDialog openFile = new OpenFileDialog();
-            openFile.Multiselect = true;
-            openFile.Title = "Select File(s) to Play";
-            if ((bool)openFile.ShowDialog())
+            var openFile = new OpenFileDialog
             {
-                var files = openFile.FileNames;
-                StringBuilder sb = new StringBuilder();
-                int counter = 1;
-                foreach (var file in files)
-                {
-                    if (counter > 1)
-                        sb.Append(">>");
-                    sb.Append(file);
-                    counter++;
-                }
-                PassCommandToServer("AddFilesToPlaylist|" + sb);
-                BtnPlayPause.IsEnabled = true;
+                Multiselect = true,
+                Title = "Select File(s) to Play"
+            };
+            var showDialog = openFile.ShowDialog();
+            if (showDialog == null || !(bool) showDialog) return;
+            var files = openFile.FileNames;
+            var sb = new StringBuilder();
+            var counter = 1;
+            foreach (var file in files)
+            {
+                if (counter > 1)
+                    sb.Append(">>");
+                sb.Append(file);
+                counter++;
             }
+            PassCommandToServer("AddFilesToPlaylist|" + sb);
+            BtnPlayPause.IsEnabled = true;
+        }
+
+        private void OpenUrl()
+        {
+            var input = new InputDialog("Add URL to the playlist", "Enter the URL you'd like to add to the playlist");
+            var result = input.ShowDialog();
+            if (result != true || string.IsNullOrEmpty(input.Response)) return;
+            var urlToAdd = input.Response;
+            PassCommandToServer($"AddFilesToPlaylist|{urlToAdd}");
         }
 
         private void BtnPrevious_Click(object sender, RoutedEventArgs e)
@@ -902,7 +1004,7 @@ namespace MPDN_RemoteControl
 
         private void Button_Click_1(object sender, RoutedEventArgs e)
         {
-            if(BtnPlaylistShow.Content.ToString() == "Show")
+            if(BtnPlaylistShow.ToolTip.ToString() == "Show")
                 PassCommandToServer("ShowPlaylist|");
             else
             {
@@ -943,22 +1045,22 @@ namespace MPDN_RemoteControl
         {
             if (dropInfo.Data != null && dropInfo.TargetItem != null)
             {
-                var sourceItem = (KeyValuePair<string, bool>) dropInfo.Data;
-                var targetItem = (KeyValuePair<string, bool>) dropInfo.TargetItem;
+                var sourceItem = (PlaylistObject) dropInfo.Data;
+                var targetItem = (PlaylistObject) dropInfo.TargetItem;
 
                 //playlistContent.Remove(sourceItem);
 
-                var idx = playlistContent.IndexOf(sourceItem);
-                playlistContent.RemoveAt(idx);
+                var idx = PlaylistContent.IndexOf(sourceItem);
+                PlaylistContent.RemoveAt(idx);
                 PassCommandToServer("RemoveFile|" + idx);
                 var insertIdx = dropInfo.InsertIndex;
                 if (dropInfo.InsertPosition == RelativeInsertPosition.AfterTargetItem)
                     insertIdx--;
-                if (insertIdx > playlistContent.Count)
-                    insertIdx = playlistContent.Count - 1;
-                playlistContent.Insert(insertIdx, sourceItem);
+                if (insertIdx > PlaylistContent.Count)
+                    insertIdx = PlaylistContent.Count - 1;
+                PlaylistContent.Insert(insertIdx, sourceItem);
 
-                PassCommandToServer("InsertFileInPlaylist|" + insertIdx + "|" + sourceItem.Key);
+                PassCommandToServer("InsertFileInPlaylist|" + insertIdx + "|" + sourceItem.Filename);
             }
         }
 
@@ -966,6 +1068,16 @@ namespace MPDN_RemoteControl
         {
             AboutWindow myAbout = new AboutWindow();
             myAbout.ShowDialog();
+        }
+
+        private void BtnClear_Click(object sender, RoutedEventArgs e)
+        {
+            PassCommandToServer("ClearPlaylist|");
+        }
+
+        private void BtnUrl_Click(object sender, RoutedEventArgs e)
+        {
+            OpenUrl();
         }
     }
 }
