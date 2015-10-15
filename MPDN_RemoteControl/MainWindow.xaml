@@ -7,14 +7,14 @@
         Title="RemoteControl" Height="454.231" Width="864.62" Closing="Window_Closing" Icon="Icons/RemoteLogo.png">
     <Window.Resources>
         <LinearGradientBrush x:Key="BgBrush1" StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Offset="0" Color="#FF1292EA"/>
-            <GradientStop Offset="1" Color="#FF229EF3"/>
+            <GradientStop Offset="0" Color="#FF4CC705"/>
+            <GradientStop Offset="1" Color="#FF1DB017"/>
         </LinearGradientBrush>
         <SolidColorBrush x:Key="ForegroundBrush" Color="White"></SolidColorBrush>
 
         <Style x:Key="HighlightRow" TargetType="{x:Type DataGridRow}">
             <Style.Triggers>
-                <DataTrigger Binding="{Binding Value}" Value="true">
+                <DataTrigger Binding="{Binding Playing}" Value="true">
                     <Setter Property="Background" Value="{StaticResource BgBrush1}" />
                     <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"></Setter>
                 </DataTrigger>
@@ -126,8 +126,7 @@
 
         <DataGrid ItemsSource="{Binding Path=PlaylistContent}" RowStyle="{StaticResource HighlightRow}" x:Name="DataGridPlaylist" Grid.Column="4" Margin="10" Grid.RowSpan="5" IsReadOnly="True" MouseDoubleClick="DataGridPlaylist_MouseDoubleClick" SelectionMode="Single" KeyUp="DataGridPlaylist_KeyUp" dragDrop:DragDrop.IsDragSource="True" dragDrop:DragDrop.IsDropTarget="True" dragDrop:DragDrop.DropHandler="{Binding}" Grid.Row="1" AutoGenerateColumns="False">
            <DataGrid.Columns>
-            <DataGridTextColumn Binding="{Binding Path=Key}" Header="File"></DataGridTextColumn>
-                <DataGridTextColumn Binding="{Binding Path=Value}"></DataGridTextColumn>
+                <DataGridTextColumn Binding="{Binding Path=Filename}" Header="File"></DataGridTextColumn>
             </DataGrid.Columns>
         </DataGrid>
 

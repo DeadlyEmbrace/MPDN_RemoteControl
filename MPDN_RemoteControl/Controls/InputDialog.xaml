@@ -5,13 +5,13 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Title="{Binding Path=DialogTitle}" Height="134.746" Width="438.559" ResizeMode="NoResize" ShowInTaskbar="False" WindowStartupLocation="Manual" WindowStyle="ToolWindow">
-    <Grid>
+    <Grid FocusManager.FocusedElement="{Binding ElementName=TxbInput}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="33"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        <TextBox Height="23" Margin="10,10,10,0" TextWrapping="Wrap" Text="{Binding Path=Response}" VerticalAlignment="Top" Grid.Row="1"/>
+        <TextBox Name="TxbInput" Height="23" Margin="10,10,10,0" TextWrapping="Wrap" Text="{Binding Path=Response}" VerticalAlignment="Top" Grid.Row="1"/>
         <TextBlock Grid.Row="0" Margin="10,10,10,0" TextWrapping="Wrap" Text="{Binding Path=QueryText}"/>
         <Button Content="Cancel" Margin="0,10,12,0" Grid.Row="2" IsCancel="True" Height="20" VerticalAlignment="Top" HorizontalAlignment="Right" Width="75"/>
         <Button Content="OK" Margin="0,10,92,0" Grid.Row="2" IsDefault="True" Height="21" VerticalAlignment="Top" HorizontalAlignment="Right" Width="75" Click="Button_Click"/>

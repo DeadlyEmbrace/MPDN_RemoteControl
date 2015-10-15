@@ -40,7 +40,6 @@ namespace MPDN_RemoteControl
         private bool _isFullscreen = false;
         private bool _muted = false;
         private readonly ClientGuid _guidManager = new ClientGuid();
-        //readonly ObservableCollection<KeyValuePair<string, bool>> _playlistContent = new ObservableCollection<KeyValuePair<string, bool>>();
         private readonly object _videoLock = new object();
 
         #endregion
@@ -61,7 +60,7 @@ namespace MPDN_RemoteControl
         public ObservableCollection<Subtitles> ShowSubtitles { get; set; } = new ObservableCollection<Subtitles>();
         public ObservableCollection<Audio> ShowAudioTracks { get; set; } = new ObservableCollection<Audio>();
         public ObservableCollection<Video> ShowVideoTracks { get; set; } = new ObservableCollection<Video>();
-        public ObservableCollection<KeyValuePair<string, bool>> PlaylistContent { get; set; } = new ObservableCollection<KeyValuePair<string, bool>>();
+        public ObservableCollection<PlaylistObject> PlaylistContent { get; set; } = new ObservableCollection<PlaylistObject>();
 
         #endregion
 
@@ -289,10 +288,14 @@ namespace MPDN_RemoteControl
             foreach (var item in items)
             {
                 var finalSplit = Regex.Split(item, "]]");
-                if (finalSplit.Count() == 2)
-                {
-                    KeyValuePair<string, bool> tmpItem = new KeyValuePair<string, bool>(finalSplit[0],
-                    bool.Parse(finalSplit[1]));
+                if (finalSplit.Length == 2)
+                { 
+                    var tmpItem = new PlaylistObject
+                    {
+                        Filename = finalSplit[0],
+                        Playing = bool.Parse(finalSplit[1])
+                    };
+
                     Dispatcher.Invoke(() => PlaylistContent.Add(tmpItem));
                 }
             }
@@ -372,6 +375,12 @@ namespace MPDN_RemoteControl
                 BtnStop.IsEnabled = true;
                 BtnFullscreen.IsEnabled = true;
                 BtnMute.IsEnabled = true;
+                var currFile = PlaylistContent.FirstOrDefault(t => t.Playing);
+                if (currFile != null)
+                    currFile.Playing = false;
+                var nextFile = PlaylistContent.FirstOrDefault(t => t.Filename == command);
+                if (nextFile != null)
+                    nextFile.Playing = true;
             });
             PassCommandToServer("GetDuration|" + _myGuid);
         }
@@ -1036,8 +1045,8 @@ namespace MPDN_RemoteControl
         {
             if (dropInfo.Data != null && dropInfo.TargetItem != null)
             {
-                var sourceItem = (KeyValuePair<string, bool>) dropInfo.Data;
-                var targetItem = (KeyValuePair<string, bool>) dropInfo.TargetItem;
+                var sourceItem = (PlaylistObject) dropInfo.Data;
+                var targetItem = (PlaylistObject) dropInfo.TargetItem;
 
                 //playlistContent.Remove(sourceItem);
 
@@ -1051,7 +1060,7 @@ namespace MPDN_RemoteControl
                     insertIdx = PlaylistContent.Count - 1;
                 PlaylistContent.Insert(insertIdx, sourceItem);
 
-                PassCommandToServer("InsertFileInPlaylist|" + insertIdx + "|" + sourceItem.Key);
+                PassCommandToServer("InsertFileInPlaylist|" + insertIdx + "|" + sourceItem.Filename);
             }
         }
 
