@@ -19,6 +19,7 @@ using GongSolutions.Wpf.DragDrop;
 using Microsoft.Win32;
 using MPDN_RemoteControl.Controls;
 using MPDN_RemoteControl.Objects;
+using YAXLib;
 
 namespace MPDN_RemoteControl
 {
@@ -41,6 +42,8 @@ namespace MPDN_RemoteControl
         private bool _muted = false;
         private readonly ClientGuid _guidManager = new ClientGuid();
         private readonly object _videoLock = new object();
+        private int ServerVersion = 3;
+        private readonly object PlaylistLock = new object();
 
         #endregion
 
@@ -174,9 +177,10 @@ namespace MPDN_RemoteControl
                     try
                     {
                         var data = reader.ReadLine();
-                        if (!String.IsNullOrEmpty(data))
+                        var newData = data.Replace("\a", "\r\n");
+                        if (!String.IsNullOrEmpty(newData))
                         {
-                            Task.Run(() => HandleServerComms(data));
+                            Task.Run(() => HandleServerComms(newData));
                         }
                     }
                     catch (Exception)
@@ -265,13 +269,16 @@ namespace MPDN_RemoteControl
                         PlaylistStateChanged(cmd[1]);
                         break;
                     case "PlaylistContent":
-                        ShowPlaylistContent(cmd[1]);
+                        DisplayPlaylistContent(cmd[1]);
                         break;
                     case "VideoTracks":
                         DisplayVideoTracks(cmd[1]);
                         break;
                     case "VideoChanged":
                         ChangeActiveVideoTrack(cmd[1]);
+                        break;
+                    case "ServerVersion":
+                        SetServerVersion(cmd[1]);
                         break;
                 }
             }
@@ -281,7 +288,69 @@ namespace MPDN_RemoteControl
             }
         }
 
-        private void ShowPlaylistContent(string cmd)
+        private void SetServerVersion(string cmd)
+        {
+            int version;
+            int.TryParse(cmd, out version);
+            ServerVersion = version == 0 ? 3 : version;
+        }
+
+        private void DisplayPlaylistContent(string cmd)
+        {
+            if (ServerVersion < 3)
+            {
+                ShowPlaylistContentApiV2(cmd);
+            }
+            else
+            {
+                ShowPlaylistContentApiV3(cmd);
+            }
+        }
+
+        private void ShowPlaylistContentApiV3(string cmd)
+        {
+            lock (PlaylistLock)
+            {
+                try
+                {
+                    var playlistData = Deserialize<PlaylistData>(cmd);
+
+                    Dispatcher.Invoke(() => PlaylistContent.Clear());
+                    foreach (var item in playlistData.Playlist)
+                    {
+                        var tmpItem = new PlaylistObject
+                        {
+                            Filename = item.FilePath,
+                            Playing = item.Active
+                        };
+
+                        Dispatcher.Invoke(() => PlaylistContent.Add(tmpItem));
+                    }
+
+                    Dispatcher.Invoke(() =>
+                    {
+                        if (PlaylistContent.Count > 1)
+                        {
+                            BtnPrevious.IsEnabled = true;
+                            BtnNext.IsEnabled = true;
+                        }
+                        else
+                        {
+                            BtnPrevious.IsEnabled = false;
+                            BtnNext.IsEnabled = false;
+                        }
+
+                        //DataGridPlaylist.ItemsSource = _playlistContent;
+                    });
+                }
+                catch (Exception ex)
+                {
+                    var pause = true;
+                }
+            }
+        }
+
+        private void ShowPlaylistContentApiV2(string cmd)
         {
             var items = Regex.Split(cmd, ">>");
             Dispatcher.Invoke(() => PlaylistContent.Clear());
@@ -1078,6 +1147,25 @@ namespace MPDN_RemoteControl
         private void BtnUrl_Click(object sender, RoutedEventArgs e)
         {
             OpenUrl();
+        }
+
+        private static string Serialize<T>(T value)
+        {
+            return CreateSerializer(typeof(T)).Serialize(value);
+        }
+
+        private static T Deserialize<T>(string serializedObject)
+        {
+            var result = CreateSerializer(typeof(T)).Deserialize(serializedObject);
+            return (T)result;
+        }
+
+        private static YAXSerializer CreateSerializer(Type type)
+        {
+            return new YAXSerializer(type, YAXExceptionHandlingPolicies.ThrowWarningsAndErrors, YAXExceptionTypes.Error,
+                YAXSerializationOptions.ThrowUponSerializingCyclingReferences |
+                YAXSerializationOptions.DontSerializePropertiesWithNoSetter |
+                YAXSerializationOptions.SerializeNullObjects);
         }
     }
 }
