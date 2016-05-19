@@ -1,7 +1,7 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 14.00
-# Visual Studio 2015
-VisualStudioVersion = 14.0.22823.1
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.23107.0
 MinimumVisualStudioVersion = 14.0.22823.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MPDN_RemoteControl", "MPDN_RemoteControl\MPDN_RemoteControl.csproj", "{1384E75F-7293-48B8-B251-99DB02FDA9C1}"
 EndProject
@@ -18,5 +18,8 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(CodealikeProperties) = postSolution
+		SolutionGuid = d27edd5c-e2b7-400f-98c2-09ad2c38e32d
 	EndGlobalSection
 EndGlobal
